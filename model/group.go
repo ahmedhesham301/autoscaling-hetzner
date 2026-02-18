@@ -1,14 +1,8 @@
 package model
 
 import (
-	"autoscaling-hezner/storage"
-	"bytes"
+	"autoscaling-hetzner/database"
 	"context"
-	"encoding/json"
-	"fmt"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 type Group struct {
@@ -23,14 +17,12 @@ type Group struct {
 }
 
 func (g *Group) Save() error {
-	jsonData, err := json.MarshalIndent(g, "", " ")
-	if err != nil {
-		return err
-	}
-	_, err = storage.Client.PutObject(context.Background(), &s3.PutObjectInput{
-		Bucket: aws.String("test"),
-		Body:   bytes.NewReader(jsonData),
-		Key:    aws.String(fmt.Sprintf("test/groups/%d.json", g.Id)),
-	})
+	query := `INSERT INTO groups (template_id, zone, locations, server_types, min_size, desired_size, max_size)
+	VALUES ($1, $2, $3, $4, $5, $6, $7);`
+	_, err := database.Pool.Exec(
+		context.Background(),
+		query,
+		g.TemplateId, g.Zone, g.Locations, g.ServerTypes, g.MinSize, g.DesiredSize, g.MaxSize,
+	)
 	return err
 }

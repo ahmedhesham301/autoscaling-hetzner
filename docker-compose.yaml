@@ -1,2 +1,19 @@
 services:
-  
+  db:
+    image: postgres:18
+    container_name: db
+    environment:
+      - POSTGRES_PASSWORD=1234
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+  pg_admin:
+    image: dpage/pgadmin4:latest
+    container_name: pg_admin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=ahmed.hesham.farag@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=1234
+      - PGADMIN_LISTEN_ADDRESS=0.0.0.0
+    ports:
+      - 81:80
+    restart: always

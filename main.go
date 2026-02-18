@@ -1,9 +1,9 @@
 package main
 
 import (
-	"autoscaling-hezner/controller"
-	"autoscaling-hezner/hetzner"
-	"autoscaling-hezner/storage"
+	"autoscaling-hetzner/controller"
+	"autoscaling-hetzner/database"
+	"autoscaling-hetzner/hetzner"
 	"context"
 	"os"
 
@@ -12,29 +12,10 @@ import (
 
 func main() {
 	ctx := context.Background()
-	storage.SetupClient(ctx)
+	
+	database.InitDB()
 	hetzner.SetupClient(ctx, os.Getenv("HKEY"))
-	// data, err := os.ReadFile("go.sum")
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// _, err = storage.Client.PutObject(ctx, &s3.PutObjectInput{
-	// 	Bucket: aws.String("test"),
-	// 	Body:   bytes.NewReader(data),
-	// 	Key:    aws.String("test/bla/go.sum"),
-	// })
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// result, _, err := hetzner.HClient.Server.Create(ctx, hcloud.ServerCreateOpts{
-	// 	Name:       "test",
-	// 	Image:      &hcloud.Image{Name: "ubuntu-24.04"},
-	// 	ServerType: &hcloud.ServerType{Name: "cx23"},
-	// 	Location:   &hcloud.Location{Name: "hel1"},
-	// })
-	// print(result.Server.Status)
-	// h, err := hetzner.HClient.Location.
+	
 	server := gin.Default()
 
 	server.GET("/locations", controller.GetLocations)

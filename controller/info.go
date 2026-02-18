@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"autoscaling-hezner/hetzner"
+	"autoscaling-hetzner/hetzner"
 	"context"
 	"fmt"
 	"net/http"
