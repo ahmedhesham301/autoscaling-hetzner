@@ -1,12 +1,13 @@
 services:
   db:
-    image: postgres:18
+    image: postgres:18-alpine
     container_name: db
     environment:
       - POSTGRES_PASSWORD=1234
     ports:
       - 5432:5432
     restart: unless-stopped
+  
   pg_admin:
     image: dpage/pgadmin4:latest
     container_name: pg_admin
@@ -16,4 +17,33 @@ services:
       - PGADMIN_LISTEN_ADDRESS=0.0.0.0
     ports:
       - 81:80
-    restart: always
+    restart: unless-stopped
+
+  mimir:
+    image: grafana/mimir:3.0.3
+    container_name: mimir
+    volumes:
+      - ./configs/mimir.yaml:/etc/mimir/mimir.yaml
+    command:
+      - --config.file=/etc/mimir/mimir.yaml
+      - --target=all,alertmanager
+  
+  alloy:
+    image: grafana/alloy
+    hostname: alloy
+    restart: unless-stopped
+    volumes:
+      - ./configs/alloy:/etc/alloy/
+    ports:
+      - 12345:12345
+    command: >
+      run
+      --server.http.listen-addr=0.0.0.0:12345
+      --storage.path=/var/lib/alloy/data
+      /etc/alloy
+
+  grafana:
+    image: grafana/grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
