@@ -6,8 +6,8 @@ import (
 )
 
 type Group struct {
-	Id          int64    `json:"id"`
-	TemplateId  int64    `json:"templateId"  binding:"required"`
+	Id          int      `json:"id"`
+	TemplateId  int      `json:"templateId"  binding:"required"`
 	Zone        string   `json:"zone"        binding:"required"`
 	Locations   []string `json:"locations"   binding:"required"`
 	ServerTypes []string `json:"serverTypes" binding:"required"`

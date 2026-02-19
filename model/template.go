@@ -6,7 +6,7 @@ import (
 )
 
 type Template struct {
-	Id          int64  `json:"id"`
+	Id          int    `json:"id"`
 	Image       string `json:"image"      binding:"required"`
 	CloudConfig string `json:"cloudConfig"`
 }

@@ -52,4 +52,15 @@ func GetTypes(g *gin.Context) {
 	}
 }
 
+func GetNetworks(g *gin.Context) {
+	resp, err := hetzner.HClient.Network.All(context.Background())
+	if err != nil {
+		g.JSON(500, gin.H{"error": err.Error()})
+	}
 
+	var networks []string
+	for _, network := range resp {
+		networks = append(networks, network.Name)
+	}
+	g.JSON(http.StatusOK, networks)
+}

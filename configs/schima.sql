@@ -17,5 +17,9 @@ CREATE TABLE groups(
 
 CREATE TABLE servers(
     id SERIAL PRIMARY KEY,
+    group_id INTEGER NOT NULL REFERENCES groups(id),
+    type VARCHAR NOT NULL,
+    location VARCHAR NOT NULL,
     private_ip INET NOT NULL
 );
+CREATE INDEX ON servers(group_id);
