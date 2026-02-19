@@ -19,7 +19,7 @@ func (s *Server) Save() error {
 	VALUES ($1 ,$2, $3, $4);`
 	_, err := database.Pool.Exec(
 		context.Background(), query,
-		s.GroupId, s.Type, s.Location, s.PrivateIp,
+		s.GroupId, s.Type, s.Location, s.PrivateIp.To4(),
 	)
 	return err
 }

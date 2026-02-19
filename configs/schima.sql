@@ -1,6 +1,7 @@
 CREATE TABLE templates(
     id SERIAL PRIMARY KEY,
-    image VARCHAR NOT NULL,
+    os_flavor VARCHAR NOT NULL,
+    os_version VARCHAR NOT NULL,
     cloud_config VARCHAR
 );
 
@@ -12,7 +13,8 @@ CREATE TABLE groups(
     server_types VARCHAR[] NOT NULL,
     min_size SMALLINT NOT NULL,
     desired_size SMALLINT NOT NULL,
-    max_size SMALLINT NOT NULL
+    max_size SMALLINT NOT NULL,
+    networks VARCHAR[] NOT NULL
 );
 
 CREATE TABLE servers(

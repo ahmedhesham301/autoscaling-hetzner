@@ -2,6 +2,7 @@ package controller
 
 import (
 	"autoscaling-hetzner/model"
+	"autoscaling-hetzner/services"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,11 @@ func CreateGroup(g *gin.Context) {
 		return
 	}
 	if err := group.Save(); err != nil {
+		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := services.ScaleUp(group.Id)
+	if err != nil {
 		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

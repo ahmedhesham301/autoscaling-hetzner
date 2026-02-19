@@ -58,9 +58,9 @@ func GetNetworks(g *gin.Context) {
 		g.JSON(500, gin.H{"error": err.Error()})
 	}
 
-	var networks []string
+	networks := make(map[string]int64)
 	for _, network := range resp {
-		networks = append(networks, network.Name)
+		networks[network.Name] = network.ID
 	}
 	g.JSON(http.StatusOK, networks)
 }
