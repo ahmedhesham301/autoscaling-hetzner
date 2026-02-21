@@ -18,7 +18,7 @@ func CreateGroup(g *gin.Context) {
 		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err := services.ScaleUp(group.Id)
+	err := services.ScaleUp(services.ScaleUpOps{Group: &group}, group.DesiredSize)
 	if err != nil {
 		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

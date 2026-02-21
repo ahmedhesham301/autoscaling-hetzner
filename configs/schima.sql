@@ -7,6 +7,7 @@ CREATE TABLE templates(
 
 CREATE TABLE groups(
     id SERIAL PRIMARY KEY,
+    name VARCHAR NOT NULL,
     template_id INTEGER NOT NULL REFERENCES templates(id),
     zone VARCHAR NOT NULL,
     locations VARCHAR[] NOT NULL,
@@ -19,6 +20,8 @@ CREATE TABLE groups(
 
 CREATE TABLE servers(
     id SERIAL PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     group_id INTEGER NOT NULL REFERENCES groups(id),
     type VARCHAR NOT NULL,
     location VARCHAR NOT NULL,

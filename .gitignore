@@ -1,2 +1,4 @@
 .env
 autoscaling-hetzner
+cloud-config.yaml
+.vscode
