@@ -13,6 +13,7 @@ func GetLocations(g *gin.Context) {
 	resp, err := hetzner.HClient.Location.All(context.Background())
 	if err != nil {
 		g.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
 	locations := make(map[string][]string)
@@ -26,6 +27,7 @@ func GetImages(g *gin.Context) {
 	resp, err := hetzner.HClient.Image.All(context.Background())
 	if err != nil {
 		g.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
 	images := make(map[string][]string)
@@ -39,6 +41,7 @@ func GetTypes(g *gin.Context) {
 	resp, err := hetzner.HClient.ServerType.All(context.Background())
 	if err != nil {
 		g.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 	// types := make()
 	for _, t := range resp {
@@ -56,6 +59,7 @@ func GetNetworks(g *gin.Context) {
 	resp, err := hetzner.HClient.Network.All(context.Background())
 	if err != nil {
 		g.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
 	networks := make(map[string]int64)

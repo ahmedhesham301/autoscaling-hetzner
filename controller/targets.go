@@ -20,7 +20,8 @@ func GetTargets(g *gin.Context) {
 	rows, err := model.GetAllServers()
 	if err != nil {
 		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		log.Panic(err.Error())
+		log.Print(err.Error())
+		return
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -29,7 +30,7 @@ func GetTargets(g *gin.Context) {
 		var groupId int
 		if err := rows.Scan(&name, &groupId, &ip); err != nil {
 			g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			log.Panic(err.Error())
+			log.Print(err.Error())
 		}
 		targets = append(targets, target{
 			Targets: []string{ip.String() + ":9100"},
