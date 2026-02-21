@@ -19,14 +19,21 @@ services:
       - 81:80
     restart: unless-stopped
 
-  mimir:
-    image: grafana/mimir:3.0.3
-    container_name: mimir
-    volumes:
-      - ./configs/mimir.yaml:/etc/mimir/mimir.yaml
+  # mimir:
+  #   image: grafana/mimir:3.0.3
+  #   container_name: mimir
+  #   volumes:
+  #     - ./configs/mimir.yaml:/etc/mimir/mimir.yaml
+  #   command:
+  #     - --config.file=/etc/mimir/mimir.yaml
+  #     - --target=all,alertmanager
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
     command:
-      - --config.file=/etc/mimir/mimir.yaml
-      - --target=all,alertmanager
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
   
   alloy:
     image: grafana/alloy

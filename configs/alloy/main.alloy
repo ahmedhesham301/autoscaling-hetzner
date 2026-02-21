@@ -1,0 +1,18 @@
+livedebugging {
+  enabled = true
+}
+
+    prometheus.remote_write "prometheus" {
+    endpoint {
+        url = "http://prometheus:9090/api/v1/write"
+    }
+}   
+
+discovery.http "targets" {
+  url = "http://192.168.1.40:8080/targets"
+}
+
+prometheus.scrape "scrape_targets" {
+  targets    = discovery.http.targets.targets
+  forward_to = [prometheus.remote_write.prometheus.receiver]
+}

@@ -21,8 +21,12 @@ func main() {
 	server.GET("/locations", controller.GetLocations)
 	server.GET("/images", controller.GetImages)
 	server.GET("/types", controller.GetTypes)
+	server.GET("/networks", controller.GetNetworks)
+
 	server.PUT("/templates", controller.CreateTemplate)
 	server.PUT("/groups", controller.CreateGroup)
-	server.GET("/networks", controller.GetNetworks)
+
+	server.GET("/targets", controller.GetTargets)
+
 	server.Run()
 }
