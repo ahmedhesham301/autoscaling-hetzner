@@ -10,22 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-
 func GetLocations(g *gin.Context) {
-	resp, err := hetzner.HClient.Location.All(context.Background())
-	if err != nil {
-		g.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-
-	vars.Zones = make(map[string]map[string]int64)
-	for _, location := range resp {
-		if vars.Zones[string(location.NetworkZone)] == nil {
-			vars.Zones[string(location.NetworkZone)] = make(map[string]int64)
-		}
-		vars.Zones[string(location.NetworkZone)][location.City] = location.ID
-	}
 	g.JSON(http.StatusOK, vars.Zones)
 }
 

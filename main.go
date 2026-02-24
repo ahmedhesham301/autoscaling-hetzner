@@ -4,6 +4,7 @@ import (
 	"autoscaling-hetzner/controller"
 	"autoscaling-hetzner/database"
 	"autoscaling-hetzner/hetzner"
+	"autoscaling-hetzner/vars"
 	"context"
 	"os"
 
@@ -15,6 +16,7 @@ func main() {
 
 	database.InitDB()
 	hetzner.SetupClient(ctx, os.Getenv("HKEY"))
+	vars.GetZones()
 
 	server := gin.Default()
 
