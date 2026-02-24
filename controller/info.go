@@ -2,12 +2,15 @@ package controller
 
 import (
 	"autoscaling-hetzner/hetzner"
+	"autoscaling-hetzner/vars"
 	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+
 
 func GetLocations(g *gin.Context) {
 	resp, err := hetzner.HClient.Location.All(context.Background())
@@ -16,11 +19,14 @@ func GetLocations(g *gin.Context) {
 		return
 	}
 
-	locations := make(map[string][]string)
+	vars.Zones = make(map[string]map[string]int64)
 	for _, location := range resp {
-		locations[string(location.NetworkZone)] = append(locations[string(location.NetworkZone)], location.City)
+		if vars.Zones[string(location.NetworkZone)] == nil {
+			vars.Zones[string(location.NetworkZone)] = make(map[string]int64)
+		}
+		vars.Zones[string(location.NetworkZone)][location.City] = location.ID
 	}
-	g.JSON(http.StatusOK, locations)
+	g.JSON(http.StatusOK, vars.Zones)
 }
 
 func GetImages(g *gin.Context) {

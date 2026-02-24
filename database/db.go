@@ -15,6 +15,7 @@ func InitDB() {
 	if !exists {
 		log.Panic("DATABASE_HOST is not set; expected the Postgres hostname")
 	}
+	
 	config, err := pgxpool.ParseConfig("postgres://postgres:1234@" + databaseHost + ":5432/postgres")
 	if err != nil {
 		log.Panicf("failed to parse Postgres connection config for host %q: %v", databaseHost, err)

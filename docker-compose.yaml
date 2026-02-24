@@ -29,6 +29,7 @@ services:
   #     - --target=all,alertmanager
   prometheus:
     image: prom/prometheus:latest
+    restart: unless-stopped
     ports:
       - 9090:9090
     command:
@@ -54,3 +55,6 @@ services:
     restart: unless-stopped
     ports:
       - '3000:3000'
+    volumes:
+      - ./configs/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+
