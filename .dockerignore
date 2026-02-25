@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+configs
+.env
+.env.example
+.gitignore
+autos.xopp
+cloud-config.yaml
+docker-compose.yaml
+Dockerfile
+README.md
+.env.compose
