@@ -48,7 +48,7 @@ services:
   #     - --config.file=/etc/mimir/mimir.yaml
   #     - --target=all,alertmanager
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3
     container_name: prometheus
     restart: unless-stopped
     ports:
@@ -58,7 +58,7 @@ services:
       - --web.enable-remote-write-receiver
   
   alloy:
-    image: grafana/alloy
+    image: grafana/alloy:v1.13.2
     container_name: alloy
     restart: unless-stopped
     volumes:
@@ -72,7 +72,7 @@ services:
       /etc/alloy
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:12.3
     container_name: grafana
     restart: unless-stopped
     ports:
