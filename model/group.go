@@ -6,35 +6,37 @@ import (
 )
 
 type Group struct {
-	Id          int      `json:"id"`
-	Name        string   `json:"name"  binding:"required"`
-	TemplateId  int      `json:"templateId"  binding:"required"`
-	Zone        string   `json:"zone"        binding:"required"`
-	Locations   []string `json:"locations"   binding:"required"`
-	ServerTypes []string `json:"serverTypes" binding:"required"`
-	MinSize     int      `json:"minSize"     binding:"required"`
-	DesiredSize int      `json:"desiredSize" binding:"required"`
-	MaxSize     int      `json:"maxSize"     binding:"required"`
-	Networks    []string `json:"networks"    binding:"required"`
+	Id             int      `json:"id"`
+	Name           string   `json:"name"           binding:"required"`
+	TemplateId     int      `json:"templateId"     binding:"required"`
+	Zone           string   `json:"zone"           binding:"required"`
+	Locations      []string `json:"locations"      binding:"required"`
+	ServerTypes    []string `json:"serverTypes"    binding:"required"`
+	MinSize        int      `json:"minSize"        binding:"required"`
+	DesiredSize    int      `json:"desiredSize"    binding:"required"`
+	MaxSize        int      `json:"maxSize"        binding:"required"`
+	Networks       []string `json:"networks"       binding:"required"`
+	MonitoringType string   `json:"monitoringType" binding:"required"`
+	Target         int16    `json:"target"         binding:"required"`
 }
 
 func (g *Group) Save() error {
-	query := `INSERT INTO groups (name, template_id, zone, locations, server_types, min_size, desired_size, max_size, networks)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	query := `INSERT INTO groups (name, template_id, zone, locations, server_types, min_size, desired_size, max_size, networks, monitoring_type, target)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	RETURNING id;`
 	err := database.Pool.QueryRow(
 		context.Background(),
 		query,
-		g.Name, g.TemplateId, g.Zone, g.Locations, g.ServerTypes, g.MinSize, g.DesiredSize, g.MaxSize, g.Networks,
+		g.Name, g.TemplateId, g.Zone, g.Locations, g.ServerTypes, g.MinSize, g.DesiredSize, g.MaxSize, g.Networks, g.MonitoringType, g.Target,
 	).Scan(&g.Id)
 	return err
 }
 
 func (g *Group) GetById(id int) error {
 	g.Id = id
-	query := `SELECT name, template_id, zone, locations, server_types, min_size, desired_size, max_size, networks
+	query := `SELECT name, template_id, zone, locations, server_types, min_size, desired_size, max_size, networks, monitoring_type, target
 	FROM groups WHERE id = $1`
 	err := database.Pool.QueryRow(context.Background(), query, id).
-		Scan(&g.Name, &g.TemplateId, &g.Zone, &g.Locations, &g.ServerTypes, &g.MinSize, &g.DesiredSize, &g.MaxSize, &g.Networks)
+		Scan(&g.Name, &g.TemplateId, &g.Zone, &g.Locations, &g.ServerTypes, &g.MinSize, &g.DesiredSize, &g.MaxSize, &g.Networks, &g.MonitoringType, &g.Target)
 	return err
 }

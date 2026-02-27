@@ -1,3 +1,5 @@
+CREATE TYPE monitoring_types AS ENUM ('cpu', 'memory');
+
 CREATE TABLE templates(
     id SERIAL PRIMARY KEY,
     os_flavor VARCHAR NOT NULL,
@@ -15,7 +17,9 @@ CREATE TABLE groups(
     min_size SMALLINT NOT NULL,
     desired_size SMALLINT NOT NULL,
     max_size SMALLINT NOT NULL,
-    networks VARCHAR[] NOT NULL
+    networks VARCHAR[] NOT NULL,
+    monitoring_type monitoring_types NOT NULL,
+    target SMALLINT NOT NULL check(target BETWEEN 1 AND 100)
 );
 
 CREATE TABLE servers(
