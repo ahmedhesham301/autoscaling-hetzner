@@ -19,7 +19,8 @@ CREATE TABLE groups(
     max_size SMALLINT NOT NULL,
     networks VARCHAR[] NOT NULL,
     monitoring_type monitoring_types NOT NULL,
-    target SMALLINT NOT NULL check(target BETWEEN 1 AND 100)
+    target SMALLINT NOT NULL check(target BETWEEN 1 AND 100),
+    rule_uid VARCHAR
 );
 
 CREATE TABLE servers(
