@@ -1,16 +1,16 @@
 services:
-  server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: server
-    ports:
-      - 8080:8080
-    env_file:
-      - .env.compose
-    depends_on:
-      db:
-        condition: service_healthy
+  # server:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: server
+  #   ports:
+  #     - 8080:8080
+  #   env_file:
+  #     - .env.compose
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
 
   db:
     image: postgres:18-alpine

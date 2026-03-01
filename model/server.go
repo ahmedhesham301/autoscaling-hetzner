@@ -14,7 +14,7 @@ type Server struct {
 	Name      string
 	GroupId   int
 	Type      string
-	Location  string
+	Location  int64
 	PrivateIp net.IP
 	Create_at time.Time
 }

@@ -3,10 +3,8 @@ package services
 import (
 	"autoscaling-hetzner/hetzner"
 	"autoscaling-hetzner/model"
-	"autoscaling-hetzner/vars"
 	"context"
 	"errors"
-	"fmt"
 	"math/rand/v2"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
@@ -44,31 +42,49 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 	if err != nil {
 		return err
 	}
-	serverTypes := group.ServerTypes
+	if len(group.Locations) == 0 {
+		return errors.New("group has no locations configured")
+	}
 
-	for i := 0; i < amount; i++ {
-		locationId := vars.Zones[group.Zone][group.Locations[i % len(group.Locations)]]
-		if locationId == 0{
-			return errors.New("There is a problem with the zone/location")	
+	var networks []*hcloud.Network
+	if template.Networks != nil {
+		for _, v := range template.Networks {
+			networks = append(networks, &hcloud.Network{ID: v})
 		}
+	}
+
+	var SSHKeys []*hcloud.SSHKey
+	for _, v := range template.SSHKeys {
+		SSHKeys = append(SSHKeys, &hcloud.SSHKey{ID: v})
+	}
+	for i := 0; i < amount; i++ {
 		res, _, err := hetzner.HClient.Server.Create(context.Background(), hcloud.ServerCreateOpts{
 			Name:       addRandomLetters(group.Name),
-			ServerType: &hcloud.ServerType{Name: serverTypes[0]},
-			Image:      &hcloud.Image{Name: fmt.Sprintf("%s-%s", template.OSFlavor, template.OSVersion)},
-			Location:   &hcloud.Location{ID: locationId},
-			Networks:   []*hcloud.Network{&hcloud.Network{ID: 11952339}},
+			ServerType: &hcloud.ServerType{Name: group.ServerType},
+			Image:      &hcloud.Image{ID: template.ImageId},
+			Location:   &hcloud.Location{ID: group.Locations[i%len(group.Locations)]},
+			Networks:   networks,
 			UserData:   template.CloudConfig,
+			SSHKeys:    SSHKeys,
 		})
 		if err != nil {
 			return err
+		}
+
+		var serverIP = res.Server.PublicNet.IPv4.IP
+		if len(res.Server.PrivateNet) > 0 {
+			serverIP = res.Server.PrivateNet[0].IP
+		}
+		if serverIP == nil || serverIP.IsUnspecified() {
+			return errors.New("created server has no usable IP address")
 		}
 
 		server := model.Server{
 			GroupId:   group.Id,
 			Name:      res.Server.Name,
 			Type:      res.Server.ServerType.Name,
-			Location:  res.Server.Location.City,
-			PrivateIp: res.Server.PrivateNet[0].IP,
+			Location:  res.Server.Location.ID,
+			PrivateIp: serverIP,
 		}
 		err = server.Save()
 		if err != nil {

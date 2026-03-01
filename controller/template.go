@@ -17,5 +17,5 @@ func CreateTemplate(g *gin.Context) {
 		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	g.Status(http.StatusOK)
+	g.JSON(http.StatusOK, template)
 }

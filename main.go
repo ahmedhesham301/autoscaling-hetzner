@@ -5,7 +5,6 @@ import (
 	"autoscaling-hetzner/database"
 	"autoscaling-hetzner/grafana"
 	"autoscaling-hetzner/hetzner"
-	"autoscaling-hetzner/vars"
 	"context"
 	"os"
 
@@ -18,7 +17,6 @@ func main() {
 	database.InitDB()
 	hetzner.SetupClient(ctx, os.Getenv("HKEY"))
 	grafana.InitGrafana()
-	vars.GetZones()
 
 	server := gin.Default()
 
@@ -26,6 +24,8 @@ func main() {
 	server.GET("/images", controller.GetImages)
 	server.GET("/types", controller.GetTypes)
 	server.GET("/networks", controller.GetNetworks)
+	server.GET("/firewalls", controller.GetFirewalls)
+	server.GET("/keys", controller.GetSSHKeys)
 
 	server.PUT("/templates", controller.CreateTemplate)
 	server.PUT("/groups", controller.CreateGroup)
