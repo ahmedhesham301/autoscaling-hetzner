@@ -11,10 +11,18 @@ import (
 	"github.com/grafana/grafana-openapi-client-go/models"
 )
 
-func SetupAlert(groupId int, monitoringType string, target int16) {
-	expression := fmt.Sprintf("avg(1-rate(node_cpu_seconds_total{mode=\"idle\",groupId='%d'}[2m]))*100", groupId)
-	forDur := strfmt.Duration(3 * time.Minute)
+func SetupAlert(groupId int, monitoringType string, target int16) (string, error) {
+	var expression string
+	switch monitoringType {
+	case "cpu":
+		expression = fmt.Sprintf("avg(1-rate(node_cpu_seconds_total{mode=\"idle\",groupId='%d'}[2m]))*100", groupId)
+	case "memory":
+		expression = fmt.Sprintf("(1-(node_memory_MemAvailable_bytes{groupId=\"%d\"} / node_memory_MemTotal_bytes{groupId=\"%d\"}))*100", groupId, groupId)
+	default:
+		return "", fmt.Errorf("invalid monitoring type")
+	}
 
+	forDur := strfmt.Duration(3 * time.Minute)
 	queries := []*models.AlertQuery{
 		{
 			RefID:         "A",
@@ -91,11 +99,12 @@ func SetupAlert(groupId int, monitoringType string, target int16) {
 	}
 	err := rule.Validate(strfmt.Default)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	_, err = grafana.GClient.Provisioning.PostAlertRule(provisioning.NewPostAlertRuleParams().WithBody(rule))
+	resp, err := grafana.GClient.Provisioning.PostAlertRule(provisioning.NewPostAlertRuleParams().WithBody(rule))
 	if err != nil {
-		panic(err)
+		return "", err
 	}
+	return resp.Payload.UID, nil
 }

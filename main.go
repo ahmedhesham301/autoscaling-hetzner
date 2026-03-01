@@ -5,7 +5,6 @@ import (
 	"autoscaling-hetzner/database"
 	"autoscaling-hetzner/grafana"
 	"autoscaling-hetzner/hetzner"
-	"autoscaling-hetzner/services"
 	"autoscaling-hetzner/vars"
 	"context"
 	"os"
@@ -19,7 +18,6 @@ func main() {
 	database.InitDB()
 	hetzner.SetupClient(ctx, os.Getenv("HKEY"))
 	grafana.InitGrafana()
-	services.SetupAlert(1,"cpu",80)
 	vars.GetZones()
 
 	server := gin.Default()

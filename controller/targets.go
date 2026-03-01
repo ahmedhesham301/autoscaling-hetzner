@@ -31,6 +31,7 @@ func GetTargets(g *gin.Context) {
 		if err := rows.Scan(&name, &groupId, &ip); err != nil {
 			g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			log.Print(err.Error())
+			return
 		}
 		targets = append(targets, target{
 			Targets: []string{ip.String() + ":9100"},
