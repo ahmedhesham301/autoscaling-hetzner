@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	gapi "github.com/grafana/grafana-openapi-client-go/client"
+	"github.com/grafana/grafana-openapi-client-go/models"
 )
 
 var GClient *gapi.GrafanaHTTPAPI
@@ -18,32 +19,29 @@ func InitGrafana() {
 	if !exists {
 		log.Panic("GRAFANA_HOST is not set; expected the grafana hostname")
 	}
-	
+
 	GClient = gapi.NewHTTPClientWithConfig(strfmt.Default, &gapi.TransportConfig{
 		Host:      grafanaHost,
 		BasePath:  "/api",
 		BasicAuth: url.UserPassword("admin", "admin"),
 		Schemes:   []string{"http"},
 	})
+	
 	resp, err := GClient.Datasources.GetDataSources()
 	if err != nil {
 		log.Panicf("%v", err)
 	}
 	PrometheusUid = resp.GetPayload()[0].UID
-	// resp, err := GClient.Folders.GetFolders(folders.NewGetFoldersParams())
-	// if err != nil {
-	// 	log.Panic(err)
-	// }
-	// res, err := GClient.Folders.CreateFolder(&models.CreateFolderCommand{Title: "test"})
-	// if err != nil {
-	// 	log.Panicf("%v", err)
-	// }
+
 	re, err := GClient.Folders.GetFolderByID(1)
 	if err != nil {
-		log.Panicf("%v", err)
+		resp, err := GClient.Folders.CreateFolder(&models.CreateFolderCommand{Title: "alerts"})
+		if err != nil {
+			log.Panicf("could not create an alert folder in grafana: %v", err)
+		}
+		FolderUid = resp.Payload.UID
+		return
 	}
 
 	FolderUid = re.Payload.UID
-	println(re.Payload.UID)
-
 }
