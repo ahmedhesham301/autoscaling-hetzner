@@ -4,7 +4,6 @@ import (
 	"autoscaling-hetzner/hetzner"
 	"autoscaling-hetzner/model"
 	"context"
-	"errors"
 	"math/rand/v2"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
@@ -42,10 +41,6 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 	if err != nil {
 		return err
 	}
-	if len(group.Locations) == 0 {
-		return errors.New("group has no locations configured")
-	}
-
 	var networks []*hcloud.Network
 	if template.Networks != nil {
 		for _, v := range template.Networks {
@@ -57,6 +52,14 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 	for _, v := range template.SSHKeys {
 		SSHKeys = append(SSHKeys, &hcloud.SSHKey{ID: v})
 	}
+
+	var firewalls []*hcloud.ServerCreateFirewall
+	if template.Firewalls != nil {
+		for _, v := range template.Firewalls {
+			firewalls = append(firewalls, &hcloud.ServerCreateFirewall{Firewall: hcloud.Firewall{ID: v}})
+		}
+	}
+
 	for i := 0; i < amount; i++ {
 		res, _, err := hetzner.HClient.Server.Create(context.Background(), hcloud.ServerCreateOpts{
 			Name:       addRandomLetters(group.Name),
@@ -67,6 +70,7 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 			UserData:   template.CloudConfig,
 			SSHKeys:    SSHKeys,
 			PublicNet:  &hcloud.ServerCreatePublicNet{EnableIPv4: *template.PublicIPv4, EnableIPv6: *template.PublicIPv6},
+			Firewalls:  firewalls,
 		})
 		if err != nil {
 			return err

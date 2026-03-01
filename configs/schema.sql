@@ -3,10 +3,11 @@ CREATE TYPE monitoring_types AS ENUM ('cpu', 'memory');
 CREATE TABLE templates(
     id SERIAL PRIMARY KEY,
     image_id BIGINT NOT NULL,
-    networks BIGINT[],
+    networks BIGINT[] NOT NULL,
     SSH_keys BIGINT[],
     public_ipv4 BOOL NOT NULL,
     public_ipv6 BOOL NOT NULL,
+    firewalls BIGINT[],
     cloud_config VARCHAR
 );
 

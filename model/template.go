@@ -12,25 +12,26 @@ type Template struct {
 	SSHKeys     []int64 `json:"SSH_keys"`
 	PublicIPv4  *bool   `json:"publicIPv4"   binding:"required"`
 	PublicIPv6  *bool   `json:"publicIPv6"   binding:"required"`
+	Firewalls   []int64 `json:"firewalls"`
 	CloudConfig string  `json:"cloudConfig"`
 }
 
 func (t *Template) Save() error {
-	query := `INSERT INTO templates (image_id, networks, SSH_keys, public_ipv4, public_ipv6,cloud_config)
-	VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`
+	query := `INSERT INTO templates (image_id, networks, SSH_keys, public_ipv4, public_ipv6, firewalls, cloud_config)
+	VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`
 	err := database.Pool.QueryRow(
 		context.Background(),
 		query,
-		t.ImageId, t.Networks, t.SSHKeys, t.PublicIPv4, t.PublicIPv6, t.CloudConfig,
+		t.ImageId, t.Networks, t.SSHKeys, t.PublicIPv4, t.PublicIPv6, t.Firewalls, t.CloudConfig,
 	).Scan(&t.Id)
 	return err
 }
 
 func (t *Template) GetById(id int) error {
 	t.Id = id
-	query := `SELECT image_id, networks, SSH_keys, public_ipv4, public_ipv6, cloud_config
+	query := `SELECT image_id, networks, SSH_keys, public_ipv4, public_ipv6, firewalls, cloud_config
 	FROM templates WHERE id = $1`
 	err := database.Pool.QueryRow(context.Background(), query, id).
-		Scan(&t.ImageId, &t.Networks, &t.SSHKeys, &t.PublicIPv4, &t.PublicIPv6, &t.CloudConfig)
+		Scan(&t.ImageId, &t.Networks, &t.SSHKeys, &t.PublicIPv4, &t.PublicIPv6, &t.Firewalls, &t.CloudConfig)
 	return err
 }
