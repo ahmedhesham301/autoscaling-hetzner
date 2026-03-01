@@ -27,8 +27,8 @@ func main() {
 	server.GET("/firewalls", controller.GetFirewalls)
 	server.GET("/keys", controller.GetSSHKeys)
 
-	server.PUT("/templates", controller.CreateTemplate)
-	server.PUT("/groups", controller.CreateGroup)
+	server.POST("/templates", controller.CreateTemplate)
+	server.POST("/groups", controller.CreateGroup)
 
 	server.GET("/targets", controller.GetTargets)
 
