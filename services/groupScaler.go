@@ -66,17 +66,10 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 			Networks:   networks,
 			UserData:   template.CloudConfig,
 			SSHKeys:    SSHKeys,
+			PublicNet:  &hcloud.ServerCreatePublicNet{EnableIPv4: *template.PublicIPv4, EnableIPv6: *template.PublicIPv6},
 		})
 		if err != nil {
 			return err
-		}
-
-		var serverIP = res.Server.PublicNet.IPv4.IP
-		if len(res.Server.PrivateNet) > 0 {
-			serverIP = res.Server.PrivateNet[0].IP
-		}
-		if serverIP == nil || serverIP.IsUnspecified() {
-			return errors.New("created server has no usable IP address")
 		}
 
 		server := model.Server{
@@ -84,7 +77,7 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 			Name:      res.Server.Name,
 			Type:      res.Server.ServerType.Name,
 			Location:  res.Server.Location.ID,
-			PrivateIp: serverIP,
+			PrivateIp: res.Server.PrivateNet[0].IP,
 		}
 		err = server.Save()
 		if err != nil {

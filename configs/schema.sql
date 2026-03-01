@@ -5,6 +5,8 @@ CREATE TABLE templates(
     image_id BIGINT NOT NULL,
     networks BIGINT[],
     SSH_keys BIGINT[],
+    public_ipv4 BOOL NOT NULL,
+    public_ipv6 BOOL NOT NULL,
     cloud_config VARCHAR
 );
 
