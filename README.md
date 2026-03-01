@@ -1,191 +1,244 @@
 # autoscaling-hetzner
 
-## What This Project Does
-This service provisions Hetzner Cloud servers from saved templates and groups, stores infrastructure metadata in PostgreSQL, exposes Prometheus scrape targets from the database, and initializes Grafana API access for alert-related operations. The runtime is a Gin HTTP API plus a monitoring stack (Alloy, Prometheus, Grafana) wired through Docker Compose.
+## Overview
+`autoscaling-hetzner` is a Go service that:
 
-## Architecture
-Services and default ports from `docker-compose.yaml`:
+- exposes a Gin HTTP API for Hetzner metadata and provisioning,
+- stores templates/groups/servers in PostgreSQL,
+- provisions Hetzner servers immediately when a group is created,
+- exposes Prometheus scrape targets from DB state,
+- initializes Grafana client state used by alert provisioning helpers.
 
-- `server:8080` (this Go API)
-- `db:5432` (PostgreSQL)
-- `pg_admin:81` (pgAdmin UI)
-- `prometheus:9090`
-- `alloy:12345`
-- `grafana:3000`
+This README documents the repository exactly as it is currently implemented.
 
-High-level flow:
+## Current State Snapshot
+- API routes are defined in `main.go` and listen on Gin default `:8080`.
+- `docker-compose.yaml` currently starts: `db`, `pg_admin`, `prometheus`, `alloy`, `grafana`.
+- `server` and `mimir` services are present but commented out in compose.
+- Alert creation helper exists (`services/alerts.go`) but is not called from request flow.
+- No `_test.go` files exist.
 
-1. `PUT /groups` stores group configuration and triggers server creation on Hetzner.
-2. Created servers are persisted in the `servers` table.
-3. `GET /targets` returns `IP:9100` endpoints from DB rows.
-4. Alloy `discovery.http` pulls `http://server:8080/targets`.
-5. Alloy scrapes targets and forwards metrics to Prometheus remote write (`/api/v1/write`).
-6. Grafana reads Prometheus data via provisioned datasource.
+## Architecture and Service Topology
+
+### Compose Services (as committed)
+| Service | Status in `docker-compose.yaml` | Port(s) | Purpose |
+| --- | --- | --- | --- |
+| `db` | enabled | `5432:5432` | PostgreSQL with init schema from `configs/schema.sql` |
+| `pg_admin` | enabled | `81:80` | pgAdmin UI |
+| `prometheus` | enabled | `9090:9090` | Prometheus with remote-write receiver flag |
+| `alloy` | enabled | `12345:12345` | HTTP discovery + scrape + remote_write forwarder |
+| `grafana` | enabled | `3000:3000` | Grafana with provisioned Prometheus datasource |
+| `server` | commented out | `8080:8080` | Go API container (disabled unless manually uncommented) |
+| `mimir` | commented out | none mapped | Example metrics backend config (disabled) |
+
+### Runtime Flow
+1. API starts, initializes DB pool, Hetzner client, and Grafana client.
+2. `POST /templates` stores provisioning template data.
+3. `POST /groups` stores group row, then immediately calls `ScaleUp` for `desiredSize`.
+4. Each created Hetzner server is inserted into `servers`.
+5. `GET /targets` returns `IP:9100` targets from `servers`.
+6. Alloy discovery polls `http://server:8080/targets` and forwards scraped metrics to Prometheus remote write (`/api/v1/write`).
+7. Grafana reads Prometheus via provisioned datasource.
 
 ## Prerequisites
-- Docker Engine with Docker Compose.
-- A Hetzner Cloud API token with permissions to create servers and read locations/networks/images.
-- A reachable Grafana host for backend calls via `GRAFANA_HOST` (host:port, no scheme).
-- Awareness of hardcoded assumptions in current code:
-- Postgres connection string uses user `postgres` and password `1234`.
-- Grafana API client uses basic auth `admin/admin`.
+- Go `1.25.6+` (per `go.mod`).
+- Docker Engine + Docker Compose.
+- Hetzner Cloud API token with permissions for reading metadata and creating servers.
+- Reachable Grafana instance for API startup (because Grafana initialization runs at process start).
 
-## Required Environment Variables
+## Security Warning and Remediation
 Do not commit real secrets.
 
-| Variable | Purpose | Example |
-| --- | --- | --- |
-| `HKEY` | Hetzner API token used by the server client | `HKEY=hc_xxxxxxxxx` |
-| `DATABASE_HOST` | PostgreSQL hostname reachable by the Go service | `DATABASE_HOST=db` (Compose) or `DATABASE_HOST=localhost` (host run) |
-| `GRAFANA_HOST` | Grafana host and port (without `http://`) | `GRAFANA_HOST=grafana:3000` |
+Current security-sensitive facts in this repo:
+- Local env files in this workspace currently contain a real Hetzner token (`.env`, `.env.compose`).
+- DB credentials are hardcoded in code as `postgres:1234` (`database/db.go`).
+- Grafana basic auth is hardcoded as `admin/admin` (`grafana/grafanaClient.go`).
 
-## Quick Start (Docker Compose)
-1. Create/update `.env.compose`:
+Recommended immediate remediation:
+1. Revoke/rotate any exposed Hetzner token from Hetzner Cloud Console.
+2. Replace local env files with non-secret placeholders.
+3. Move credentials to secure secret storage for real deployments.
+4. Replace hardcoded DB/Grafana credentials in code before production use.
+
+## Configuration
+
+### Environment Variables
+| Variable | Required | Used by | Description |
+| --- | --- | --- | --- |
+| `HKEY` | yes | Hetzner client init | Hetzner API token |
+| `DATABASE_HOST` | yes | DB init | Postgres hostname only (no scheme/port) |
+| `GRAFANA_HOST` | yes | Grafana init | Grafana host:port (no scheme), example `localhost:3000` |
+
+Safe example:
 
 ```bash
-cat > .env.compose <<'EOF'
-HKEY=REPLACE_WITH_HETZNER_TOKEN
-DATABASE_HOST=db
-GRAFANA_HOST=grafana:3000
-EOF
+export HKEY=REPLACE_WITH_HETZNER_TOKEN
+export DATABASE_HOST=localhost
+export GRAFANA_HOST=localhost:3000
 ```
 
-2. Start the stack:
+### Static Configuration Files
+- SQL schema: `configs/schema.sql`
+- Alloy pipeline: `configs/alloy/main.alloy`
+- Grafana datasource provisioning: `configs/grafana/datasource.yaml`
+- Optional example Mimir config: `configs/mimir.yaml`
+- Example cloud-init text: `cloud-config.yaml` (stored as escaped newline string)
+
+## Run Modes
+
+### Mode A: Compose dependencies + API on host (as-is friendly)
+1. Start dependency services:
 
 ```bash
-docker compose up --build
+docker compose up -d db pg_admin prometheus alloy grafana
 ```
 
-3. Verify first checks:
+2. Run API on host:
+
+```bash
+export HKEY=REPLACE_WITH_HETZNER_TOKEN
+export DATABASE_HOST=localhost
+export GRAFANA_HOST=localhost:3000
+go run .
+```
+
+3. Verify API:
 
 ```bash
 curl -i http://localhost:8080/locations
-curl -i http://localhost:8080/networks
 ```
 
-4. Open dashboards and tools:
-- Grafana: `http://localhost:3000` (current default auth in code is `admin/admin`)
-- Prometheus: `http://localhost:9090`
-- pgAdmin: `http://localhost:81`
+Important caveat for this mode:
+- Alloy is configured with `http://server:8080/targets`, which resolves only when API runs as compose service named `server`. If API runs on host, Alloy target discovery will not reach it unless config/networking is adjusted.
 
-Startup note: `server` waits for a healthy `db` container. Other services start independently.
+### Mode B: Full compose with API container (requires manual file edit)
+`server` is currently commented out in `docker-compose.yaml`. Uncomment it to run API inside compose network so Alloy can reach `http://server:8080/targets`.
 
-## API
-Base URL: `http://localhost:8080`
+## API Reference
+Base URL (host-run): `http://localhost:8080`
 
 ### GET /locations
-Purpose: Return Hetzner locations grouped by network zone.
-
-Example:
+Returns Hetzner locations (`[]Location` from hcloud client).
 
 ```bash
 curl -s http://localhost:8080/locations
 ```
 
-Representative response:
+Representative shape:
 
 ```json
-{
-  "eu-central": {
-    "fsn1": 12345,
-    "nbg1": 12346
+[
+  {
+    "id": 1,
+    "name": "fsn1",
+    "network_zone": "eu-central"
   }
-}
+]
 ```
 
 ### GET /images
-Purpose: Return available image versions grouped by OS flavor.
-
-Example:
+Returns Hetzner images (`[]Image`).
 
 ```bash
 curl -s http://localhost:8080/images
 ```
 
-Representative response:
-
-```json
-{
-  "ubuntu": ["22.04", "24.04"],
-  "debian": ["12"]
-}
-```
-
 ### GET /types
-Purpose: Intended to inspect available server types.
-
-Example:
+Returns Hetzner server types (`[]ServerType`).
 
 ```bash
-curl -i http://localhost:8080/types
+curl -s http://localhost:8080/types
 ```
 
-Current behavior caveat: handler logs type details to server stdout and does not return a structured JSON payload.
-
 ### GET /networks
-Purpose: Return Hetzner networks as `name -> id`.
-
-Example:
+Returns Hetzner networks (`[]Network`).
 
 ```bash
 curl -s http://localhost:8080/networks
 ```
 
-Representative response:
-
-```json
-{
-  "private-net": 11952339
-}
-```
-
-### PUT /templates
-Purpose: Save a template used when creating servers.
-
-Example:
+### GET /firewalls
+Returns Hetzner firewalls (`[]Firewall`).
 
 ```bash
-curl -i -X PUT http://localhost:8080/templates \
+curl -s http://localhost:8080/firewalls
+```
+
+### GET /keys
+Returns Hetzner SSH keys (`[]SSHKey`).
+
+```bash
+curl -s http://localhost:8080/keys
+```
+
+### POST /templates
+Creates and persists a template row.
+
+```bash
+curl -i -X POST http://localhost:8080/templates \
   -H 'Content-Type: application/json' \
   -d '{
-    "OSFlavor": "ubuntu",
-    "OSVersion": "24.04",
+    "image_id": 45557056,
+    "networks": [11952339],
+    "SSH_keys": [987654],
+    "publicIPv4": true,
+    "publicIPv6": true,
+    "firewalls": [123456],
     "cloudConfig": "#cloud-config\npackage_update: true\npackages:\n  - prometheus-node-exporter"
   }'
 ```
 
-Success response: `200 OK` with empty body.
+JSON fields (from `model.Template`):
+- `image_id` (`int64`, required)
+- `networks` (`[]int64`, required)
+- `SSH_keys` (`[]int64`, optional)
+- `publicIPv4` (`bool`, required)
+- `publicIPv6` (`bool`, required)
+- `firewalls` (`[]int64`, optional)
+- `cloudConfig` (`string`, optional)
 
-### PUT /groups
-Purpose: Save a group definition, then create `desiredSize` servers immediately.
+Notes:
+- `publicIPv4` and `publicIPv6` are pointer-backed booleans with `binding:"required"`, so fields must be present in JSON.
+- Success returns `200` with inserted template object (including `id`).
 
-Example:
+### POST /groups
+Creates and persists a group row, then immediately provisions `desiredSize` servers.
 
 ```bash
-curl -i -X PUT http://localhost:8080/groups \
+curl -i -X POST http://localhost:8080/groups \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "web",
     "templateId": 1,
     "zone": "eu-central",
-    "locations": ["nbg1", "fsn1"],
-    "serverTypes": ["cx22", "cx32"],
+    "locations": [1, 2],
+    "serverType": "cx22",
     "minSize": 1,
     "desiredSize": 2,
     "maxSize": 5,
-    "networks": ["private-net"],
     "monitoringType": "cpu",
     "target": 80
   }'
 ```
 
-Success response: `200 OK` with empty body.  
-Validation/service errors return `400` with `{"error":"..."}`.
+JSON fields (from `model.Group`):
+- `name` (`string`, required)
+- `templateId` (`int`, required)
+- `zone` (`string`, required)
+- `locations` (`[]int64`, required)
+- `serverType` (`string`, required)
+- `minSize` (`int`, required)
+- `desiredSize` (`int`, required)
+- `maxSize` (`int`, required)
+- `monitoringType` (`string`, required, DB enum `cpu|memory`)
+- `target` (`int16`, required, DB check `1..100`)
+
+Behavior:
+- Group row is inserted before provisioning starts.
+- If provisioning fails, request returns `400` but inserted group row is not rolled back.
 
 ### GET /targets
-Purpose: Return Prometheus target list built from DB `servers`.
-
-Example:
+Returns Prometheus target groups from stored servers.
 
 ```bash
 curl -s http://localhost:8080/targets
@@ -199,79 +252,117 @@ Representative response:
     "targets": ["10.0.0.12:9100"],
     "labels": {
       "groupId": "1",
-      "name": "web-a1B2c"
+      "name": "web-Ab12C"
     }
   }
 ]
 ```
 
-## Database Schema Overview
-- `templates`: stores OS flavor/version and optional cloud-init payload.
-- `groups`: stores autoscaling configuration (`zone`, `locations`, `server_types`, bounds, monitoring fields).
-- `servers`: stores provisioned server metadata and private IP used for scraping.
+## Database Schema Mapping
 
-Important schema details:
+### `templates`
+- `id SERIAL PRIMARY KEY`
+- `image_id BIGINT NOT NULL` <- `image_id`
+- `networks BIGINT[] NOT NULL` <- `networks`
+- `SSH_keys BIGINT[]` <- `SSH_keys`
+- `public_ipv4 BOOL NOT NULL` <- `publicIPv4`
+- `public_ipv6 BOOL NOT NULL` <- `publicIPv6`
+- `firewalls BIGINT[]` <- `firewalls`
+- `cloud_config VARCHAR` <- `cloudConfig`
 
-- `monitoring_types` enum values: `cpu`, `memory`.
-- `groups.rule_uid` column exists in schema.
+### `groups`
+- `id SERIAL PRIMARY KEY`
+- `name VARCHAR NOT NULL`
+- `template_id INTEGER NOT NULL REFERENCES templates(id)`
+- `zone VARCHAR NOT NULL`
+- `locations INTEGER[] NOT NULL`
+- `server_type VARCHAR NOT NULL`
+- `min_size SMALLINT NOT NULL`
+- `desired_size SMALLINT NOT NULL`
+- `max_size SMALLINT NOT NULL`
+- `monitoring_type monitoring_types NOT NULL` (`cpu`, `memory`)
+- `target SMALLINT NOT NULL CHECK (target BETWEEN 1 AND 100)`
+- `rule_uid VARCHAR`
 
-## Monitoring and Alerting Flow
-- Scrape targets are generated from `servers` via `GET /targets`.
-- Alloy config (`configs/alloy/main.alloy`) uses `discovery.http` against `http://server:8080/targets`.
-- Alloy forwards scraped metrics to Prometheus remote write endpoint (`http://prometheus:9090/api/v1/write`).
-- On startup, Grafana client initialization fetches datasource UID and folder UID for alert operations.
-- The alert creation helper exists (`services.SetupAlert`) but is not invoked by the current request flow.
+### `servers`
+- `id SERIAL PRIMARY KEY`
+- `name VARCHAR NOT NULL`
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+- `group_id INTEGER NOT NULL REFERENCES groups(id)`
+- `type VARCHAR NOT NULL`
+- `location INTEGER NOT NULL`
+- `private_ip INET NOT NULL`
+- index on `group_id`
 
-## Known Limitations
-- `GET /types` does not return a structured API response.
-- Group scaling currently uses only the first `serverTypes` entry.
-- Group scaling currently uses a fixed network ID in code (`11952339`) instead of the `networks` payload values.
-- Grafana defaults are hardcoded in code (for example basic auth `admin/admin`, first datasource selection, folder ID assumptions).
-- `cloud-config.yaml` currently contains escaped newline sequences (`\n`) instead of multiline YAML formatting.
-- No automated tests (`*_test.go`) are present in this repository.
+## Monitoring and Alerting (Implemented vs Wired)
 
-## Local Development (Optional)
-Run the binary locally while keeping dependencies available.
+Implemented:
+- `GET /targets` provides scrape targets from DB.
+- Alloy config scrapes discovered targets and forwards to Prometheus remote write.
+- Grafana datasource provisioning points to `http://prometheus:9090`.
+- `services.SetupAlert` can create Grafana alert rules using Prometheus expressions.
 
-1. Start dependency services (example):
+Not wired into current request flow:
+- `services.SetupAlert` is never invoked by `POST /groups` or other active handlers.
+- `groups.rule_uid` exists in schema but is not set by current API flow.
+
+## Known Limitations and Behavioral Caveats
+- Compose file does not run API by default (`server` is commented).
+- Autoscaling loop is not implemented; creation path performs one-time `ScaleUp`.
+- `minSize`/`maxSize` are stored but not enforced by runtime scaler logic.
+- `zone` is stored in DB but not used in `ScaleUp`.
+- `ScaleUp` assumes private network exists and reads `res.Server.PrivateNet[0].IP`.
+- `ScaleUp` indexes locations with modulo; empty `locations` can break runtime assumptions.
+- Grafana init assumes datasource list is non-empty and uses the first datasource UID.
+- DB and Grafana credentials are hardcoded in code.
+- API startup depends on DB and Grafana availability; failures panic at startup.
+
+## Troubleshooting
+
+### Panic: `DATABASE_HOST is not set`
+Set env var before starting API:
 
 ```bash
-docker compose up -d db grafana prometheus alloy
+export DATABASE_HOST=localhost
 ```
 
-2. Export environment variables for host execution:
+### Panic: `GRAFANA_HOST is not set`
+Set env var before starting API:
 
 ```bash
-export HKEY=REPLACE_WITH_HETZNER_TOKEN
-export DATABASE_HOST=localhost
 export GRAFANA_HOST=localhost:3000
 ```
 
-3. Run the service:
+### API starts but `/groups` fails with Hetzner errors
+- Validate `HKEY` token and project permissions.
+- Ensure referenced IDs (`image_id`, `networks`, `SSH_keys`, `firewalls`, `locations`) exist in your Hetzner project.
+
+### `/targets` returns empty array
+No rows in `servers` table yet. Create at least one successful group provisioning first.
+
+### Alloy target discovery does not work in host-run mode
+Alloy uses static URL `http://server:8080/targets` from `configs/alloy/main.alloy`. That host resolves only when API is a compose service named `server`.
+
+### Schema changes do not apply
+`configs/schema.sql` is applied only on first Postgres initialization. If DB volume already exists, recreate container/volume for schema re-init.
+
+## Development Notes
+- Build binary:
 
 ```bash
-go run .
+go build .
 ```
 
-This mode still requires reachable Postgres, Grafana, and Hetzner APIs.
+- Run compiled binary:
 
-## Troubleshooting
-- Missing env vars:
-- Symptom: startup panic like `DATABASE_HOST is not set`.
-- Fix: set `HKEY`, `DATABASE_HOST`, `GRAFANA_HOST` before running.
+```bash
+./autoscaling-hetzner
+```
 
-- Database host mismatch:
-- Symptom: DB connection/ping failures at startup.
-- Fix: use `DATABASE_HOST=db` inside Compose, or `DATABASE_HOST=localhost` for host-run with mapped port.
+- Container image build:
 
-- Grafana host/auth mismatch:
-- Symptom: startup panic during Grafana init.
-- Fix: verify `GRAFANA_HOST` resolves correctly and that Grafana credentials still match current hardcoded values.
+```bash
+docker build -t autoscaling-hetzner:local .
+```
 
-- Hetzner token/permission issues:
-- Symptom: `/images`, `/networks`, `/locations`, or group creation returns provider errors.
-- Fix: validate token scope and project access in Hetzner Cloud.
-
-- Empty `/targets` response:
-- Symptom: `[]` from `/targets`.
-- Fix: ensure at least one successful `PUT /groups` created servers and rows were inserted into `servers`.
+- Security workflow file exists at `.github/workflows/snyk-security.yml`.
