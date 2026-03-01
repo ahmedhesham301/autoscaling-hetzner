@@ -14,8 +14,13 @@ var PrometheusUid string
 var FolderUid string
 
 func InitGrafana() {
+	grafanaHost, exists := os.LookupEnv("GRAFANA_HOST")
+	if !exists {
+		log.Panic("GRAFANA_HOST is not set; expected the grafana hostname")
+	}
+	
 	GClient = gapi.NewHTTPClientWithConfig(strfmt.Default, &gapi.TransportConfig{
-		Host:      os.Getenv("GRAFANA_HOST"),
+		Host:      grafanaHost,
 		BasePath:  "/api",
 		BasicAuth: url.UserPassword("admin", "admin"),
 		Schemes:   []string{"http"},
