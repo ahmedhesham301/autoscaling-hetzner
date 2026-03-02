@@ -87,15 +87,16 @@ func SetupAlert(groupId int, monitoringType string, target int16) (string, error
 	}
 
 	rule := &models.ProvisionedAlertRule{
-		Title:        conv.Pointer(fmt.Sprintf("%s usage", monitoringType)),
-		Condition:    conv.Pointer("B"),
-		Data:         queries,
-		ExecErrState: conv.Pointer("Alerting"),
-		NoDataState:  conv.Pointer("Alerting"),
-		FolderUID:    &grafana.FolderUid,
-		For:          &forDur,
-		OrgID:        conv.Pointer(int64(1)),
-		RuleGroup:    conv.Pointer("default"),
+		Title:                conv.Pointer(fmt.Sprintf("%s usage", monitoringType)),
+		Condition:            conv.Pointer("B"),
+		Data:                 queries,
+		ExecErrState:         conv.Pointer("Alerting"),
+		NoDataState:          conv.Pointer("Alerting"),
+		FolderUID:            &grafana.FolderUid,
+		For:                  &forDur,
+		OrgID:                conv.Pointer(int64(1)),
+		RuleGroup:            conv.Pointer("default"),
+		NotificationSettings: &models.AlertRuleNotificationSettings{Receiver: conv.Pointer("server")},
 	}
 	err := rule.Validate(strfmt.Default)
 	if err != nil {

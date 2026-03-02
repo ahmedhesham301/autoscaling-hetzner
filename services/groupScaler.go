@@ -5,6 +5,8 @@ import (
 	"autoscaling-hetzner/model"
 	"context"
 	"math/rand/v2"
+	"net"
+	"os"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )
@@ -76,14 +78,26 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 			return err
 		}
 
+		// use public ip if the environment is dev
+		var privateIp net.IP
+		if os.Getenv("ENV") == "dev" {
+			privateIp = res.Server.PublicNet.IPv4.IP
+		} else {
+			privateIp = res.Server.PrivateNet[0].IP
+		}
+
 		server := model.Server{
 			GroupId:   group.Id,
 			Name:      res.Server.Name,
 			Type:      res.Server.ServerType.Name,
 			Location:  res.Server.Location.ID,
-			PrivateIp: res.Server.PrivateNet[0].IP,
+			PrivateIp: privateIp,
 		}
 		err = server.Save()
+		if err != nil {
+			return err
+		}
+		_, err = SetupAlert(group.Id, "cpu", group.Target)
 		if err != nil {
 			return err
 		}

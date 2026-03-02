@@ -47,10 +47,10 @@ func InitGrafana() {
 			log.Panicf("could not create an alert folder in grafana: %v", err)
 		}
 		FolderUid = resp.Payload.UID
-		return
-	}
 
-	FolderUid = re.Payload.UID
+	} else {
+		FolderUid = re.Payload.UID
+	}
 
 	// Ensure a "server" webhook contact point exists in Grafana.
 	// Reuse its UID if found, otherwise create it and store the new UID.
@@ -58,7 +58,6 @@ func InitGrafana() {
 	if err != nil {
 		log.Panic(err)
 	}
-
 	if len(resp2.Payload) == 0 {
 		body := models.EmbeddedContactPoint{
 			Name: "server",
@@ -67,12 +66,9 @@ func InitGrafana() {
 				"url": "http://192.168.1.40:8080/webhooks/grafana/alerts",
 			},
 		}
-		resp3, err := GClient.Provisioning.PostContactpoints(provisioning.NewPostContactpointsParams().WithBody(&body))
+		_, err := GClient.Provisioning.PostContactpoints(provisioning.NewPostContactpointsParams().WithBody(&body))
 		if err != nil {
 			log.Panic(err)
 		}
-		ContactPointUid = resp3.Payload.UID
-		return
 	}
-	ContactPointUid = resp2.Payload[0].UID
 }
