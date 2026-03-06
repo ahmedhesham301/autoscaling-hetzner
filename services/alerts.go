@@ -3,6 +3,7 @@ package services
 import (
 	"autoscaling-hetzner/grafana"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -15,7 +16,7 @@ func SetupAlert(groupId int, monitoringType string, target int16) (string, error
 	var expression string
 	switch monitoringType {
 	case "cpu":
-		expression = fmt.Sprintf("avg(1-rate(node_cpu_seconds_total{mode=\"idle\",groupId='%d'}[2m]))*100", groupId)
+		expression = fmt.Sprintf("avg(1-rate(node_cpu_seconds_total{mode=\"idle\",groupId='%d'}[1m]))*100", groupId)
 	case "memory":
 		expression = fmt.Sprintf("(1-(node_memory_MemAvailable_bytes{groupId=\"%d\"} / node_memory_MemTotal_bytes{groupId=\"%d\"}))*100", groupId, groupId)
 	default:
@@ -91,12 +92,14 @@ func SetupAlert(groupId int, monitoringType string, target int16) (string, error
 		Condition:            conv.Pointer("B"),
 		Data:                 queries,
 		ExecErrState:         conv.Pointer("Alerting"),
-		NoDataState:          conv.Pointer("Alerting"),
+		NoDataState:          conv.Pointer("NoData"),
 		FolderUID:            &grafana.FolderUid,
 		For:                  &forDur,
 		OrgID:                conv.Pointer(int64(1)),
 		RuleGroup:            conv.Pointer("default"),
 		NotificationSettings: &models.AlertRuleNotificationSettings{Receiver: conv.Pointer("server")},
+		UID:                  strconv.Itoa(groupId),
+		Labels:               map[string]string{"groupId": strconv.Itoa(groupId)},
 	}
 	err := rule.Validate(strfmt.Default)
 	if err != nil {

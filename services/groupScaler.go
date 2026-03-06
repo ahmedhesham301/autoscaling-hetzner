@@ -38,8 +38,21 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 		group = *ops.Group
 	}
 
+	if group.DesiredSize >= group.MaxSize {
+		return nil
+	}
+
+	servers, err := model.GetAllServersInGroup(group.Id)
+	if err != nil {
+		return err
+	}
+	serversLocations := make(map[int64]int)
+	for _, server := range servers {
+		serversLocations[server.Location]++
+	}
+
 	var template model.Template
-	err := template.GetById(group.TemplateId)
+	err = template.GetById(group.TemplateId)
 	if err != nil {
 		return err
 	}
@@ -67,7 +80,7 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 			Name:       addRandomLetters(group.Name),
 			ServerType: &hcloud.ServerType{Name: group.ServerType},
 			Image:      &hcloud.Image{ID: template.ImageId},
-			Location:   &hcloud.Location{ID: group.Locations[i%len(group.Locations)]},
+			Location:   &hcloud.Location{ID: whereToScale("random", group.Locations)},
 			Networks:   networks,
 			UserData:   template.CloudConfig,
 			SSHKeys:    SSHKeys,
@@ -108,4 +121,11 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 
 func ScaleOut() {
 
+}
+
+func whereToScale(method string, locations []int64) int64 {
+	if method == "random" {
+		return locations[rand.IntN(len(locations))]
+	}
+	return locations[rand.IntN(len(locations))]
 }

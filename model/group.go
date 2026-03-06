@@ -39,3 +39,4 @@ func (g *Group) GetById(id int) error {
 		Scan(&g.Name, &g.TemplateId, &g.Zone, &g.Locations, &g.ServerType, &g.MinSize, &g.DesiredSize, &g.MaxSize, &g.MonitoringType, &g.Target)
 	return err
 }
+

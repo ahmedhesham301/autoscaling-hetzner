@@ -15,4 +15,5 @@ discovery.http "targets" {
 prometheus.scrape "scrape_targets" {
   targets    = discovery.http.targets.targets
   forward_to = [prometheus.remote_write.prometheus.receiver]
+  scrape_interval = "30s"
 }

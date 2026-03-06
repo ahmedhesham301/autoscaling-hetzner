@@ -37,3 +37,23 @@ func GetAllServers() (pgx.Rows, error) {
 	}
 	return resp, nil
 }
+
+func GetAllServersInGroup(groupID int) ([]Server, error) {
+	query := "SELECT id, location, created_at FROM servers WHERE group_id=$1;"
+	resp, err := database.Pool.Query(context.TODO(), query, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Close()
+
+	var servers []Server
+
+	for resp.Next() {
+		var server Server
+		if err := resp.Scan(&server.Id, &server.Location, &server.Create_at); err != nil {
+			return nil, err
+		}
+		servers = append(servers, server)
+	}
+	return servers, nil
+}
