@@ -1,10 +1,11 @@
-plans:
+ plans:
 - [ ] implement frontend
 - [ ] implement end points to delete modify templates/groups 
 - [ ] implement scale out
 
 ## Architecture overview
-![[hetzner auto scaling.png]]
+<img width="971" height="681" alt="hetzner auto scaling (1)" src="https://github.com/user-attachments/assets/5a46de66-61dd-46b7-b12b-4ea1943126f4" />
+
 app: the app stores and gets groups/templates/servers in the database, calls the hetzner api, setups alerts in Grafana using grafana api, provides servers ip to grafana alloy.
 Grafana: evaluates alert rules and send a webhook to the app.
 PostgreSQL: stores the templates,groups,servers data.
