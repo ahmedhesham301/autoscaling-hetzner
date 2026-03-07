@@ -114,16 +114,20 @@ func ScaleUp(ops ScaleUpOps, amount int, source string) error {
 		if err != nil {
 			return err
 		}
-		_, err = SetupAlert(group.Id, "cpu", group.Target)
-		if err != nil {
-			return err
-		}
 
 		if source == "alert" {
+
 			err = group.UpdateDesiredSize(1)
 			if err != nil {
 				return err
 			}
+		}
+	}
+	
+	if source == "init" {
+		_, err = SetupAlert(group.Id, "cpu", group.Target)
+		if err != nil {
+			return err
 		}
 	}
 

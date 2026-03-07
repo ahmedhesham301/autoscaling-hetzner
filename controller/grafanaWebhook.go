@@ -13,6 +13,7 @@ func ReceiveGrafanaWebhook(g *gin.Context) {
 	var alert Alert
 	if err := g.ShouldBindJSON(&alert); err != nil {
 		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("%v", err)
 		return
 	}
 	g.Status(http.StatusOK)
