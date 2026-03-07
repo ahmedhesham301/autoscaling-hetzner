@@ -27,7 +27,7 @@ type ScaleUpOps struct {
 	Group   *model.Group
 }
 
-func ScaleUp(ops ScaleUpOps, amount int) error {
+func ScaleUp(ops ScaleUpOps, amount int, source string) error {
 	var group model.Group
 	if ops.Group == nil {
 		err := group.GetById(ops.GroupId)
@@ -76,6 +76,10 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 	}
 
 	for i := 0; i < amount; i++ {
+		if group.DesiredSize >= group.MaxSize {
+			return nil
+		}
+
 		res, _, err := hetzner.HClient.Server.Create(context.Background(), hcloud.ServerCreateOpts{
 			Name:       addRandomLetters(group.Name),
 			ServerType: &hcloud.ServerType{Name: group.ServerType},
@@ -113,6 +117,13 @@ func ScaleUp(ops ScaleUpOps, amount int) error {
 		_, err = SetupAlert(group.Id, "cpu", group.Target)
 		if err != nil {
 			return err
+		}
+
+		if source == "alert" {
+			err = group.UpdateDesiredSize(1)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

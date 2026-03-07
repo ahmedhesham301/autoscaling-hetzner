@@ -2,8 +2,6 @@ package controller
 
 import (
 	"autoscaling-hetzner/services"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -19,19 +17,19 @@ func ReceiveGrafanaWebhook(g *gin.Context) {
 	}
 	g.Status(http.StatusOK)
 
-	jsonData, err := json.Marshal(alert)
-	if err != nil {
-		log.Fatal("Error:", err)
-	}
-	fmt.Println(string(jsonData))
 
 	for _, alert := range alert.Alerts {
-		if alert.Labels["alertname"] != "DatasourceNoData" && alert.Status != "resolved"{
+		if alert.Labels["alertname"] != "DatasourceNoData" && alert.Status != "resolved" {
 			groupId, err := strconv.Atoi(alert.Labels["groupId"])
 			if err != nil {
-				log.Fatal("Error:", err)
-			}	
-			services.ScaleUp(services.ScaleUpOps{GroupId: groupId}, 1)
+				log.Printf("%v", err)
+				return
+			}
+			err = services.ScaleUp(services.ScaleUpOps{GroupId: groupId}, 1, "alert")
+			if err != nil {
+				log.Printf("%v", err)
+				return
+			}
 		}
 	}
 }

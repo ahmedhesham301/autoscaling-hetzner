@@ -4,6 +4,7 @@ services:
   #     context: .
   #     dockerfile: Dockerfile
   #   container_name: server
+  #   restart: unless-stopped
   #   ports:
   #     - 8080:8080
   #   env_file:
@@ -39,14 +40,6 @@ services:
       - 81:80
     restart: unless-stopped
 
-  # mimir:
-  #   image: grafana/mimir:3.0.3
-  #   container_name: mimir
-  #   volumes:
-  #     - ./configs/mimir.yaml:/etc/mimir/mimir.yaml
-  #   command:
-  #     - --config.file=/etc/mimir/mimir.yaml
-  #     - --target=all,alertmanager
   prometheus:
     image: prom/prometheus:v3
     container_name: prometheus

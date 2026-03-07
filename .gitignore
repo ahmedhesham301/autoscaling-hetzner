@@ -3,3 +3,4 @@ autoscaling-hetzner
 cloud-config.yaml
 .vscode
 .env.compose
+.obsidian
