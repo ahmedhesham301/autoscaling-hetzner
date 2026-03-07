@@ -10,7 +10,7 @@ COPY . .
 
 RUN go build .
 
-FROM alpine
+FROM alpine:3
 
 WORKDIR /app
 
