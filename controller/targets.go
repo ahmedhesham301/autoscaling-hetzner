@@ -2,7 +2,7 @@ package controller
 
 import (
 	"autoscaling-hetzner/model"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"strconv"
@@ -20,7 +20,7 @@ func GetTargets(g *gin.Context) {
 	rows, err := model.GetAllServers()
 	if err != nil {
 		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		log.Print(err.Error())
+		slog.Error("Failed to expose targets", "error", err)
 		return
 	}
 	defer rows.Close()
@@ -30,7 +30,7 @@ func GetTargets(g *gin.Context) {
 		var groupId int
 		if err := rows.Scan(&name, &groupId, &ip); err != nil {
 			g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			log.Print(err.Error())
+			slog.Error("", "error", err)
 			return
 		}
 		targets = append(targets, target{

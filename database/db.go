@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,22 +13,26 @@ var Pool *pgxpool.Pool
 func InitDB() {
 	databaseHost, exists := os.LookupEnv("DATABASE_HOST")
 	if !exists {
-		log.Panic("DATABASE_HOST is not set; expected the Postgres hostname")
+		slog.Error("env var DATABASE_HOST is not set")
+		os.Exit(1)
 	}
-	
+
 	config, err := pgxpool.ParseConfig("postgres://postgres:1234@" + databaseHost + ":5432/postgres")
 	if err != nil {
-		log.Panicf("failed to parse Postgres connection config for host %q: %v", databaseHost, err)
+		slog.Error("failed to parse Postgres connection config", "error", err)
+		os.Exit(1)
 	}
 	config.ConnConfig.TLSConfig = nil
 
 	Pool, err = pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
-		log.Panicf("failed to initialize Postgres connection pool for host %q: %v", databaseHost, err)
+		slog.Error("failed to initialize Postgres connection pool", "error", err)
+		os.Exit(1)
 	}
 
 	_, err = Pool.Exec(context.TODO(), "SELECT now()")
 	if err != nil {
-		log.Panicf("database connectivity check failed for host %q: %v", databaseHost, err)
+		slog.Error("database connectivity check failed for host", "error", err)
+		os.Exit(1)
 	}
 }
