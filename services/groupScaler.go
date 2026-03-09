@@ -123,9 +123,9 @@ func ScaleUp(ops ScaleUpOps, amount int, source string) error {
 			}
 		}
 	}
-	
+
 	if source == "init" {
-		_, err = SetupAlert(group.Id, "cpu", group.Target)
+		_, err = SetupAlert(&group)
 		if err != nil {
 			return err
 		}

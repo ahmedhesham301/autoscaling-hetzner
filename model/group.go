@@ -6,37 +6,40 @@ import (
 )
 
 type Group struct {
-	Id             int     `json:"id"`
-	Name           string  `json:"name"           binding:"required"`
-	TemplateId     int     `json:"templateId"     binding:"required"`
-	Zone           string  `json:"zone"           binding:"required"`
-	Locations      []int64 `json:"locations"      binding:"required"`
-	ServerType     string  `json:"serverType"     binding:"required"`
-	MinSize        int     `json:"minSize"        binding:"required"`
-	DesiredSize    int     `json:"desiredSize"    binding:"required"`
-	MaxSize        int     `json:"maxSize"        binding:"required"`
-	MonitoringType string  `json:"monitoringType" binding:"required"`
-	Target         int16   `json:"target"         binding:"required"`
+	Id                 int     `json:"id"`
+	Name               string  `json:"name"                binding:"required"`
+	TemplateId         int     `json:"templateId"          binding:"required"`
+	Zone               string  `json:"zone"                binding:"required"`
+	Locations          []int64 `json:"locations"           binding:"required"`
+	ServerType         string  `json:"serverType"          binding:"required"`
+	MinSize            int     `json:"minSize"             binding:"required"`
+	DesiredSize        int     `json:"desiredSize"         binding:"required"`
+	MaxSize            int     `json:"maxSize"             binding:"required"`
+	MonitoringType     string  `json:"monitoringType"      binding:"required"`
+	ScalingAlgorithm   string  `json:"scalingAlgorithm"    binding:"required"`
+	TargetThreshold    *int16  `json:"targetThreshold"`
+	ScaleUpThreshold   *int16  `json:"scaleUpThreshold"`
+	ScaleDownThreshold *int16  `json:"scaleDownThreshold"`
 }
 
 func (g *Group) Save() error {
-	query := `INSERT INTO groups (name, template_id, zone, locations, server_type, min_size, desired_size, max_size, monitoring_type, target)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	query := `INSERT INTO groups (name, template_id, zone, locations, server_type, min_size, desired_size, max_size, monitoring_type, scaling_algorithm, target_threshold, scale_up_threshold,scale_down_threshold)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	RETURNING id;`
 	err := database.Pool.QueryRow(
 		context.Background(),
 		query,
-		g.Name, g.TemplateId, g.Zone, g.Locations, g.ServerType, g.MinSize, g.DesiredSize, g.MaxSize, g.MonitoringType, g.Target,
+		g.Name, g.TemplateId, g.Zone, g.Locations, g.ServerType, g.MinSize, g.DesiredSize, g.MaxSize, g.MonitoringType, g.ScalingAlgorithm, g.TargetThreshold, g.ScaleUpThreshold, g.ScaleDownThreshold,
 	).Scan(&g.Id)
 	return err
 }
 
 func (g *Group) GetById(id int) error {
 	g.Id = id
-	query := `SELECT name, template_id, zone, locations, server_type, min_size, desired_size, max_size, monitoring_type, target
+	query := `SELECT name, template_id, zone, locations, server_type, min_size, desired_size, max_size, monitoring_type, scaling_algorithm, target_threshold, scale_up_threshold,scale_down_threshold
 	FROM groups WHERE id = $1;`
 	err := database.Pool.QueryRow(context.Background(), query, id).
-		Scan(&g.Name, &g.TemplateId, &g.Zone, &g.Locations, &g.ServerType, &g.MinSize, &g.DesiredSize, &g.MaxSize, &g.MonitoringType, &g.Target)
+		Scan(&g.Name, &g.TemplateId, &g.Zone, &g.Locations, &g.ServerType, &g.MinSize, &g.DesiredSize, &g.MaxSize, &g.MonitoringType, &g.ScalingAlgorithm, &g.TargetThreshold, &g.ScaleUpThreshold, &g.ScaleDownThreshold)
 	return err
 }
 
