@@ -22,12 +22,12 @@ func addRandomLetters(name string) string {
 	return name
 }
 
-type ScaleUpOps struct {
+type ScaleOps struct {
 	GroupId int
 	Group   *model.Group
 }
 
-func ScaleUp(ops ScaleUpOps, amount int, source string) error {
+func ScaleUp(ops ScaleOps, amount int, source string) error {
 	var group model.Group
 	if ops.Group == nil {
 		err := group.GetById(ops.GroupId)
@@ -134,7 +134,7 @@ func ScaleUp(ops ScaleUpOps, amount int, source string) error {
 	return nil
 }
 
-func ScaleOut() {
+func ScaleOut(ops ScaleOps) {
 
 }
 
