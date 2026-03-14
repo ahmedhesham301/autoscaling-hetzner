@@ -28,6 +28,8 @@ func main() {
 	server.GET("/keys", controller.GetSSHKeys)
 
 	server.POST("/templates", controller.CreateTemplate)
+	server.GET("/templates", controller.GetAllTemplates)
+
 	server.POST("/groups", controller.CreateGroup)
 	server.POST("/webhooks/grafana/alerts", controller.ReceiveGrafanaWebhook)
 

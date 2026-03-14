@@ -35,3 +35,24 @@ func (t *Template) GetById(id int) error {
 		Scan(&t.ImageId, &t.Networks, &t.SSHKeys, &t.PublicIPv4, &t.PublicIPv6, &t.Firewalls, &t.CloudConfig)
 	return err
 }
+
+func GetAllTemplates() ([]Template, error) {
+	query := `SELECT id, image_id, networks, ssh_keys, public_ipv4, public_ipv6, firewalls, cloud_config
+	FROM templates;`
+	rows, err := database.Pool.Query(context.TODO(), query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var templates []Template
+
+	for rows.Next() {
+		var t Template
+		if err := rows.Scan(&t.Id, &t.ImageId, &t.Networks, &t.SSHKeys, &t.PublicIPv4, &t.PublicIPv6, &t.Firewalls, &t.CloudConfig); err != nil {
+			return nil, err
+		}
+		templates = append(templates, t)
+	}
+	return templates, nil
+}

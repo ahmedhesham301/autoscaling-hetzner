@@ -24,3 +24,17 @@ func CreateTemplate(g *gin.Context) {
 	slog.Info("a template has been created", "templateId", template.Id)
 
 }
+
+func GetAllTemplates(g *gin.Context) {
+	templates, err := model.GetAllTemplates()
+	if err != nil {
+		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		slog.Error("Failed to get all templates", "error", err)
+		return
+	}
+	if len(templates) == 0 {
+		g.JSON(http.StatusOK, []any{})
+		return
+	}
+	g.JSON(http.StatusOK, templates)
+}
