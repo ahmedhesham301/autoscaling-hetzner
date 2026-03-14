@@ -62,3 +62,28 @@ func (g *Group) Validate() error {
 	}
 	return nil
 }
+
+func GetAllGroups() ([]Group, error) {
+	query := `SELECT id, name, template_id, zone, locations, server_type, min_size, desired_size, max_size, monitoring_type, 
+	scaling_algorithm, target_threshold, scale_up_threshold, scale_down_threshold
+	FROM groups;`
+	rows, err := database.Pool.Query(context.TODO(), query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var groups []Group
+
+	for rows.Next() {
+		var g Group
+		if err := rows.Scan(
+			&g.Id, &g.Name, &g.TemplateId, &g.Zone, &g.Locations, &g.ServerType, &g.MinSize, &g.DesiredSize, &g.MaxSize,
+			&g.MonitoringType, &g.ScalingAlgorithm, &g.TargetThreshold, &g.ScaleUpThreshold, &g.ScaleDownThreshold,
+		); err != nil {
+			return nil, err
+		}
+		groups = append(groups, g)
+	}
+	return groups, nil
+}
