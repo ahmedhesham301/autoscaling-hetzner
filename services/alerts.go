@@ -35,7 +35,7 @@ func SetupAlert(group *model.Group) (string, error) {
 		NotificationSettings: &models.AlertRuleNotificationSettings{
 			Receiver:       conv.Pointer("server"),
 			RepeatInterval: "3m",
-			GroupInterval:  "3m",
+			GroupInterval:  "1s",
 			GroupWait:      "0s",
 		},
 		UID:    strconv.Itoa(group.Id),

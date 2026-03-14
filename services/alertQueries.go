@@ -48,7 +48,7 @@ func setupAlertQuery(group *model.Group) ([]*models.AlertQuery, error) {
 			RefID:         "A",
 			DatasourceUID: grafana.PrometheusUid,
 			RelativeTimeRange: &models.RelativeTimeRange{
-				From: models.Duration(180),
+				From: models.Duration(1),
 				To:   models.Duration(0),
 			},
 			Model: map[string]any{
