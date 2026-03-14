@@ -29,6 +29,7 @@ func main() {
 
 	server.POST("/templates", controller.CreateTemplate)
 	server.GET("/templates", controller.GetAllTemplates)
+	server.GET("/templates/:id", controller.GetTemplateByID)
 
 	server.POST("/groups", controller.CreateGroup)
 	server.POST("/webhooks/grafana/alerts", controller.ReceiveGrafanaWebhook)

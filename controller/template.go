@@ -2,10 +2,13 @@ package controller
 
 import (
 	"autoscaling-hetzner/model"
+	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 func CreateTemplate(g *gin.Context) {
@@ -37,4 +40,25 @@ func GetAllTemplates(g *gin.Context) {
 		return
 	}
 	g.JSON(http.StatusOK, templates)
+}
+
+func GetTemplateByID(g *gin.Context) {
+	id, err := strconv.Atoi(g.Param("id"))
+	if err != nil {
+		g.JSON(http.StatusBadRequest, gin.H{"error": "id must be a number"})
+		return
+	}
+
+	var template model.Template
+	if err := template.GetById(id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			g.Status(http.StatusNotFound)
+			return
+		}
+		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		slog.Error("Failed to get template by id", "error", err)
+		return
+	}
+
+	g.JSON(http.StatusOK, template)
 }
