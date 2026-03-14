@@ -3,6 +3,8 @@ package model
 import (
 	"autoscaling-hetzner/database"
 	"context"
+	"errors"
+	"log/slog"
 )
 
 type Group struct {
@@ -47,5 +49,16 @@ func (g *Group) UpdateDesiredSize(s int) error {
 	query := `UPDATE groups SET desired_size=$1 WHERE id=$2;`
 	g.DesiredSize += s
 	_, err := database.Pool.Exec(context.TODO(), query, g.DesiredSize, g.Id)
-	return err
+	if err != nil {
+		return err
+	}
+	slog.Info("desired state updated", "groupID", g.Id, "before", g.DesiredSize-s, "after", g.DesiredSize)
+	return nil
+}
+
+func (g *Group) Validate() error {
+	if g.MinSize > g.MaxSize {
+		return errors.New("max size cant be smaller than min")
+	}
+	return nil
 }

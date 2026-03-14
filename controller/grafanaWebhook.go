@@ -3,9 +3,6 @@ package controller
 import (
 	"autoscaling-hetzner/model"
 	"autoscaling-hetzner/services"
-	"encoding/json"
-	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -25,11 +22,11 @@ func ReceiveGrafanaWebhook(g *gin.Context) {
 	for _, alert := range alert.Alerts {
 		if alert.Labels["alertname"] != "DatasourceNoData" && alert.Status != "resolved" {
 
-			jsonData, err := json.Marshal(alert)
-			if err != nil {
-				log.Fatal("Error:", err)
-			}
-			fmt.Println(string(jsonData))
+			// jsonData, err := json.Marshal(alert)
+			// if err != nil {
+			// 	log.Fatal("Error:", err)
+			// }
+			// fmt.Println(string(jsonData))
 
 			groupId, err := strconv.Atoi(alert.Labels["groupId"])
 			if err != nil {
@@ -46,16 +43,19 @@ func ReceiveGrafanaWebhook(g *gin.Context) {
 
 			if group.ScalingAlgorithm == "simple" {
 				if alert.Values["B0"] <= float64(*group.ScaleDownThreshold) {
-					services.ScaleOut(services.ScaleOps{Group: &group})
+					err = services.ScaleOut(services.ScaleOps{Group: &group})
+					if err != nil {
+						slog.Error("Failed to scale out", "groupID", group.Id, "error", err)
+					}
 				} else {
-					err = services.ScaleUp(services.ScaleOps{GroupId: groupId}, 1, "alert")
+					err = services.ScaleUp(services.ScaleOps{Group: &group}, 1, "alert")
 					if err != nil {
 						slog.Error("Failed to scale up", "groupId", groupId, "error", err)
-						return
+					} else {
+						slog.Info("group scaled up", "groupID", group.Id)
 					}
 				}
 			}
-
 		}
 	}
 }

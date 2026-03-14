@@ -46,8 +46,8 @@ CREATE TABLE groups(
 );
 
 CREATE TABLE servers(
-    id SERIAL PRIMARY KEY,
-    name VARCHAR NOT NULL,
+    id BIGINT PRIMARY KEY,
+    name VARCHAR NOT NULL UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     group_id INTEGER NOT NULL REFERENCES groups(id),
     type VARCHAR NOT NULL,

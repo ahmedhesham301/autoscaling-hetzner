@@ -10,22 +10,28 @@ import (
 )
 
 type Server struct {
-	Id        int
+	ID        int64
 	Name      string
 	GroupId   int
 	Type      string
 	Location  int64
 	PrivateIp net.IP
-	Create_at time.Time
+	CreatedAt time.Time
 }
 
 func (s *Server) Save() error {
-	query := `INSERT INTO servers (name, group_id, type, location, private_ip)
-	VALUES ($1 ,$2, $3, $4, $5);`
+	query := `INSERT INTO servers (id, name, group_id, type, location, private_ip)
+	VALUES ($1 ,$2, $3, $4, $5, $6);`
 	_, err := database.Pool.Exec(
 		context.TODO(), query,
-		s.Name, s.GroupId, s.Type, s.Location, s.PrivateIp.String(),
+		s.ID, s.Name, s.GroupId, s.Type, s.Location, s.PrivateIp.String(),
 	)
+	return err
+}
+
+func (s *Server) DeleteServer() error {
+	query := "DELETE FROM servers WHERE name=$1;"
+	_, err := database.Pool.Exec(context.TODO(), query, s.Name)
 	return err
 }
 
@@ -38,22 +44,23 @@ func GetAllServers() (pgx.Rows, error) {
 	return resp, nil
 }
 
-func GetAllServersInGroup(groupID int) ([]Server, error) {
-	query := "SELECT id, location, created_at FROM servers WHERE group_id=$1;"
+func GetAllServersInGroup(groupID int) (map[int64][]Server, error) {
+	query := "SELECT id, name, location, created_at FROM servers WHERE group_id=$1;"
 	resp, err := database.Pool.Query(context.TODO(), query, groupID)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Close()
 
-	var servers []Server
+	servers := make(map[int64][]Server)
 
 	for resp.Next() {
 		var server Server
-		if err := resp.Scan(&server.Id, &server.Location, &server.Create_at); err != nil {
+		if err := resp.Scan(&server.ID, &server.Name, &server.Location, &server.CreatedAt); err != nil {
 			return nil, err
 		}
-		servers = append(servers, server)
+
+		servers[server.Location] = append(servers[server.Location], server)
 	}
 	return servers, nil
 }

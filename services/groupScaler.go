@@ -4,6 +4,7 @@ import (
 	"autoscaling-hetzner/hetzner"
 	"autoscaling-hetzner/model"
 	"context"
+	"log/slog"
 	"math/rand/v2"
 	"net"
 	"os"
@@ -42,17 +43,8 @@ func ScaleUp(ops ScaleOps, amount int, source string) error {
 		return nil
 	}
 
-	servers, err := model.GetAllServersInGroup(group.Id)
-	if err != nil {
-		return err
-	}
-	serversLocations := make(map[int64]int)
-	for _, server := range servers {
-		serversLocations[server.Location]++
-	}
-
 	var template model.Template
-	err = template.GetById(group.TemplateId)
+	err := template.GetById(group.TemplateId)
 	if err != nil {
 		return err
 	}
@@ -104,6 +96,7 @@ func ScaleUp(ops ScaleOps, amount int, source string) error {
 		}
 
 		server := model.Server{
+			ID:        res.Server.ID,
 			GroupId:   group.Id,
 			Name:      res.Server.Name,
 			Type:      res.Server.ServerType.Name,
@@ -134,8 +127,50 @@ func ScaleUp(ops ScaleOps, amount int, source string) error {
 	return nil
 }
 
-func ScaleOut(ops ScaleOps) {
+func ScaleOut(ops ScaleOps) error {
+	var group model.Group
+	if ops.Group == nil {
+		err := group.GetById(ops.GroupId)
+		if err != nil {
+			return err
+		}
+	} else {
+		group = *ops.Group
+	}
 
+	if group.DesiredSize <= group.MinSize {
+		return nil
+	}
+
+	servers, err := model.GetAllServersInGroup(group.Id)
+	if err != nil {
+		return err
+	}
+
+	scaleLocationID := int64(-1)
+	scaleLocationServerCount := -1
+	for locationID, servers := range servers {
+		if len(servers) > scaleLocationServerCount {
+			scaleLocationID = locationID
+			scaleLocationServerCount = len(servers)
+		}
+	}
+	_, _, err = hetzner.HClient.Server.DeleteWithResult(context.TODO(), &hcloud.Server{ID: servers[scaleLocationID][0].ID})
+	if err != nil {
+		return err
+	}
+
+	err = servers[scaleLocationID][0].DeleteServer()
+	if err != nil {
+		return err
+	}
+
+	err = group.UpdateDesiredSize(-1)
+	if err != nil {
+		return err
+	}
+	slog.Info("group scaled out", "groupID", group.Id)
+	return nil
 }
 
 func whereToScale(method string, locations []int64) int64 {

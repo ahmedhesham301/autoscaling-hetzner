@@ -16,11 +16,19 @@ func CreateGroup(g *gin.Context) {
 		slog.Error("failed to bind group json", "error", err)
 		return
 	}
+
+	if err := group.Validate(); err != nil {
+		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		slog.Error("failed to validate group", "error", err)
+		return
+	}
+
 	if err := group.Save(); err != nil {
 		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		slog.Error("failed to save group", "error", err)
 		return
 	}
+
 	err := services.ScaleUp(services.ScaleOps{Group: &group}, group.DesiredSize, "init")
 	if err != nil {
 		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
