@@ -67,7 +67,7 @@ func InitGrafana() {
 			Name: "server",
 			Type: conv.Pointer("webhook"),
 			Settings: map[string]any{
-				"url": "http://192.168.1.40:8080/webhooks/grafana/alerts",
+				"url": "http://server:8080/webhooks/grafana/alerts",
 			},
 		}
 		_, err := GClient.Provisioning.PostContactpoints(provisioning.NewPostContactpointsParams().WithBody(&body))
