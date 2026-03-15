@@ -2,13 +2,6 @@
 
 Autoscaling control plane for Hetzner Cloud instances.
 
-## What This Project Does
-
-- Stores templates, groups, and provisioned servers in PostgreSQL.
-- Creates Hetzner servers from saved templates.
-- Exposes dynamic scrape targets for Grafana Alloy at `GET /targets`.
-- Creates Grafana alert rules per group.
-- Receives Grafana webhook alerts and performs scale-up.
 
 ## Architecture
 
