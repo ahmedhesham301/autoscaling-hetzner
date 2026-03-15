@@ -71,12 +71,16 @@ func ScaleUp(ops ScaleOps, amount int, source string) error {
 		if group.DesiredSize >= group.MaxSize {
 			return nil
 		}
+		whereToScale, err := whereToScaleUp("balanced", group.Locations, group.Id)
+		if err != nil {
+			return err
+		}
 
 		res, _, err := hetzner.HClient.Server.Create(context.Background(), hcloud.ServerCreateOpts{
 			Name:       addRandomLetters(group.Name),
 			ServerType: &hcloud.ServerType{Name: group.ServerType},
 			Image:      &hcloud.Image{ID: template.ImageId},
-			Location:   &hcloud.Location{ID: whereToScale("random", group.Locations)},
+			Location:   &hcloud.Location{ID: *whereToScale},
 			Networks:   networks,
 			UserData:   template.CloudConfig,
 			SSHKeys:    SSHKeys,
@@ -173,9 +177,36 @@ func ScaleOut(ops ScaleOps) error {
 	return nil
 }
 
-func whereToScale(method string, locations []int64) int64 {
+// returns ID of location to start the server at
+// if method is random it returns random location
+// if method is something it returns the id of the location with least servers
+func whereToScaleUp(method string, locations []int64, groupID int) (*int64, error) {
 	if method == "random" {
-		return locations[rand.IntN(len(locations))]
+		return &locations[rand.IntN(len(locations))], nil
 	}
-	return locations[rand.IntN(len(locations))]
+	servers, err := model.GetAllServersInGroup(groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if a location has no servers
+	// if yes it return that location
+	if len(locations) > len(servers) {
+		for _, v := range locations {
+			if _, ok := servers[v]; !ok {
+				return &v, nil
+			}
+		}
+	}
+
+	scaleLocationID := int64(-1)
+	scaleLocationServerCount := int64(999999999999999)
+	for locationID, servers := range servers {
+		if len(servers) < int(scaleLocationServerCount) {
+			scaleLocationID = locationID
+			scaleLocationServerCount = int64(len(servers))
+		}
+	}
+
+	return &scaleLocationID, nil
 }
