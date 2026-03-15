@@ -27,7 +27,7 @@ Components:
 > must enable public ip in the template 
 
 1. Clone the repo:
-
+	
 ```bash
 git clone https://github.com/ahmedhesham301/autoscaling-hetzner.git
 cd autoscaling-hetzner
@@ -86,7 +86,7 @@ docker compose up -d --build
 
 currently the project does not have a frontend so u will have to use the api
 ### create a templates
-make a post request to the endpoint with the following body
+make a post request to the endpoint /templates with the following body
 
 | param       | type         | required | where to get   |
 | ----------- | ------------ | -------- | -------------- |
@@ -101,7 +101,7 @@ make a post request to the endpoint with the following body
 > it is recommended to make your own snapshot with it installed
 > but it can also be installed at startup using the cloud config below(tested on ubuntu and debain) 
 
-example 
+example :
 ```json
 {
 	"image_id": 310554929,
@@ -114,3 +114,37 @@ example
 ```
 
 
+### create a group
+make a post request to the endpoint /groups with the following body
+
+| param              | type         | required | where to get      |
+| ------------------ | ------------ | -------- | ----------------- |
+| templateId         | int          | yes      | GET/templates     |
+| name               | string       | yes      |                   |
+| zone               | string       | yes      |                   |
+| locations          | list of ints | yes      | GET/locations     |
+| serverType         | string       | yes      | /types            |
+| minSize            | int          | yes      |                   |
+| desiredSize        | int          | yes      |                   |
+| maxSize            | int          | yes      |                   |
+| monitoringType     | string       | yes      | "cpu" or "memory" |
+| scalingAlgorithm   | string       | yes      | "simple"          |
+| scaleUpThreshold   | int          | yes      |                   |
+| scaleDownThreshold | int          | yes      |                   |
+example :
+```json
+{
+	"templateId": 1,
+	"name": "testgroup",
+	"zone": "eu-central",
+	"locations" :[2,3],
+	"serverType":"cx23",
+	"minSize": 1,
+	"desiredSize": 1,
+	"maxSize": 5,
+	"monitoringType":"cpu",
+	"scalingAlgorithm":"simple",
+	"scaleUpThreshold": 70,
+	"scaleDownThreshold": 40
+}
+```
