@@ -1,7 +1,10 @@
-# autoscaling-hetzner
+# Autoscaling Hetzner
 
 Autoscaling control plane for Hetzner Cloud instances.
 
+## Overview
+
+This project is a control plane for autoscaling Hetzner Cloud servers based on monitoring signals.
 
 ## Architecture
 
@@ -9,57 +12,29 @@ Autoscaling control plane for Hetzner Cloud instances.
 
 Components:
 
-- `app` (Go): API + orchestration logic.
-- `PostgreSQL`: storage for templates, groups, and servers.
-- `Prometheus`: metric storage.
-- `Alloy`: target discovery + scraping + remote_write to Prometheus.
-- `Grafana`: alert evaluation + webhook notifications.
-
-
+- `server` (Go/Gin): API + orchestration logic
+- `PostgreSQL`: stores templates, groups, and servers
+- `Alloy`: discovers scrape targets from `/targets` and scrapes node exporter
+- `Prometheus`: stores metrics (remote_write receiver enabled)
+- `Grafana`: evaluates alerts and sends webhook events back to the API
 
 ## Prerequisites
-- Docker + Docker Compose 
+
+- Docker + Docker Compose
 - Hetzner Cloud API token
+- Outbound internet access from the control plane (to call Hetzner API)
+- Node Exporter available on each provisioned server (`prometheus-node-exporter`)
 
-## Installation
-### Locally
-(not recommended only for testing)
-> must enable public ip in the template 
+## Quick Start (Docker Compose)
 
-1. Clone the repo:
-	
-```bash
-git clone https://github.com/ahmedhesham301/autoscaling-hetzner.git
-cd autoscaling-hetzner
-```
-
-2. create a `.env.compose` file with the following values in it
-
-```bash
-HKEY=<your_hetzner_api_token>
-DATABASE_HOST=db
-GRAFANA_HOST=grafana:3000
-ENV=dev
-```
-
-3. Start the the containers:
-
-```bash
-docker compose up -d --build
-```
-
-By default the API listens on `:8080`.
-### on Hetzner (recommended)
-> must allow outgoing traffic to public internet (to be able to access Hetzner api )
->  must be in the network where the server are going to be
-1. Clone the repo:
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/ahmedhesham301/autoscaling-hetzner.git
 cd autoscaling-hetzner
 ```
 
-2. create a `.env.compose` file with the following values in it
+2. Create `.env.compose`:
 
 ```bash
 HKEY=<your_hetzner_api_token>
@@ -68,83 +43,139 @@ GRAFANA_HOST=grafana:3000
 ENV=prod
 ```
 
-3. Start the the containers:
+3. Start services:
 
 ```bash
 docker compose up -d --build
 ```
 
+### `ENV` mode
+
+- `ENV=prod` (recommended on Hetzner): uses private IPs for scraping.
+- `ENV=dev` (local testing): uses public IPv4 for scraping.
+
+For production deployment, the control plane should be in the same Hetzner network as managed servers.
+
 ## Default Ports
 
-- App: `8080`
-- Grafana: `3000` (default credentials in this setup: `admin` / `admin`)
-- Prometheus: `9090`
-- PostgreSQL: `5432` (default credentials: postgres / 1234)
-- Alloy: `12345`
+| Service | Port | Notes |
+| --- | --- | --- |
+| API server | `8080` | Main API |
+| Grafana | `3000` | Default login: `admin` / `admin` |
+| Prometheus | `9090` | Metrics storage |
+| PostgreSQL | `5432` | Default: `postgres` / `1234` |
+| Alloy | `12345` | Alloy HTTP endpoint |
+| pgAdmin | `81` | Optional DB UI (`docker-compose`) |
 
-## usage
+## API Usage
 
-currently the project does not have a frontend so u will have to use the api
-### create a templates
-make a post request to the endpoint /templates with the following body
+No frontend is included yet; interact via HTTP API.
 
-| param       | type         | required | where to get   |
-| ----------- | ------------ | -------- | -------------- |
-| image_id    | int          | yes      | GET /images    |
-| SSH_Keys    | list of ints | no       | GET /keys      |
-| firewalls   | list of ints | no       | GET /firewalls |
-| networks    | list of ints | no       | GET /networks  |
-| publicIPv4  | bool         | yes      |                |
-| publicIPv6  | bool         | yes      |                |
-| cloudConfig | string       | no       |                |
-> prometheus node exporter must be installed on the server
-> it is recommended to make your own snapshot with it installed
-> but it can also be installed at startup using the cloud config below(tested on ubuntu and debain) 
+Base URL (local): `http://localhost:8080`
 
-example :
+### 1) Discovery endpoints
+
+Use these to fetch IDs/names before creating resources:
+
+- `GET /locations`
+- `GET /images`
+- `GET /types`
+- `GET /networks`
+- `GET /firewalls`
+- `GET /keys`
+
+### 2) Create a template
+
+`POST /templates`
+
+| Field         | Type     | Required | Notes                 |
+| ------------- | -------- | -------- | --------------------- |
+| `image_id`    | `int`    | yes      | from `GET /images`    |
+| `networks`    | `[]int`  | yes      | from `GET /networks`  |
+| `SSH_keys`    | `[]int`  | no       | from `GET /keys`      |
+| `firewalls`   | `[]int`  | no       | from `GET /firewalls` |
+| `publicIPv4`  | `bool`   | yes      | must be true in dev   |
+| `publicIPv6`  | `bool`   | yes      |                       |
+| `cloudConfig` | `string` | no       |                       |
+
+Example:
+
 ```json
 {
-	"image_id": 310554929,
-	"Networks": [11952339],
-	"SSH_Keys": [107916411],
-	"publicIPv4": true,
-	"publicIPv6": true,
-	"cloudConfig":"#cloud-config\npackage_update: true\npackage_upgrade: true\npackages:\n - prometheus-node-exporter\n - stress"
+  "image_id": 310554929,
+  "networks": [11952339],
+  "SSH_keys": [107916411],
+  "publicIPv4": true,
+  "publicIPv6": true,
+  "cloudConfig": "#cloud-config\npackage_update: true\npackage_upgrade: true\npackages:\n  - prometheus-node-exporter\n  - stress"
 }
 ```
 
+### 3) Create a group
 
-### create a group
-make a post request to the endpoint /groups with the following body
+`POST /groups`
 
-| param              | type         | required | where to get      |
-| ------------------ | ------------ | -------- | ----------------- |
-| templateId         | int          | yes      | GET/templates     |
-| name               | string       | yes      |                   |
-| zone               | string       | yes      |                   |
-| locations          | list of ints | yes      | GET/locations     |
-| serverType         | string       | yes      | /types            |
-| minSize            | int          | yes      |                   |
-| desiredSize        | int          | yes      |                   |
-| maxSize            | int          | yes      |                   |
-| monitoringType     | string       | yes      | "cpu" or "memory" |
-| scalingAlgorithm   | string       | yes      | "simple"          |
-| scaleUpThreshold   | int          | yes      |                   |
-| scaleDownThreshold | int          | yes      |                   |
-example :
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `templateId` | `int` | yes | from `GET /templates` |
+| `name` | `string` | yes | prefix for created server names |
+| `zone` | `string` | yes | e.g. `eu-central` |
+| `locations` | `[]int` | yes | from `GET /locations` |
+| `serverType` | `string` | yes | from `GET /types` |
+| `minSize` | `int` | yes | |
+| `desiredSize` | `int` | yes | initial size |
+| `maxSize` | `int` | yes | must be `>= minSize` |
+| `monitoringType` | `string` | yes | `cpu` or `memory` |
+| `scalingAlgorithm` | `string` | yes | currently `simple` |
+| `scaleUpThreshold` | `int` | yes* | required for `simple` |
+| `scaleDownThreshold` | `int` | yes* | required for `simple` |
+
+Example:
+
 ```json
 {
-	"templateId": 1,
-	"name": "testgroup",
-	"zone": "eu-central",
-	"locations" :[2,3],
-	"serverType":"cx23",
-	"minSize": 1,
-	"desiredSize": 1,
-	"maxSize": 5,
-	"monitoringType":"cpu",
-	"scalingAlgorithm":"simple",
-	"scaleUpThreshold": 70,
-	"scaleDownThreshold": 40
+  "templateId": 1,
+  "name": "testgroup",
+  "zone": "eu-central",
+  "locations": [2, 3],
+  "serverType": "cx23",
+  "minSize": 1,
+  "desiredSize": 1,
+  "maxSize": 5,
+  "monitoringType": "cpu",
+  "scalingAlgorithm": "simple",
+  "scaleUpThreshold": 70,
+  "scaleDownThreshold": 40
 }
 ```
+
+### 4) Management endpoints
+
+- `GET /templates`
+- `GET /templates/:id`
+- `GET /groups`
+- `GET /groups/:id`
+- `DELETE /groups/:id`
+- `GET /targets` (used by Alloy)
+
+## Node Exporter Requirement
+
+Servers must expose node exporter on port `9100` for scaling signals to work.
+
+You can install it through `cloudConfig`, for example:
+
+```yaml
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - prometheus-node-exporter
+```
+
+For production, it is better to install Node Exporter once, create a snapshot, and use that snapshot as your image.
+
+## Notes
+
+- Grafana datasource and contact point are auto-created at startup.
+- A Grafana alert rule is created when a group is created.
+- Change default credentials (`Grafana`, `PostgreSQL`, `pgAdmin`) before production use.
