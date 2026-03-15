@@ -34,6 +34,7 @@ func main() {
 	server.POST("/groups", controller.CreateGroup)
 	server.GET("/groups", controller.GetAllGroups)
 	server.GET("/groups/:id", controller.GetGroupByID)
+	server.DELETE("/groups/:id", controller.DeleteGroupByID)
 
 	server.POST("/webhooks/grafana/alerts", controller.ReceiveGrafanaWebhook)
 

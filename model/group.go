@@ -87,3 +87,9 @@ func GetAllGroups() ([]Group, error) {
 	}
 	return groups, nil
 }
+
+func DeleteGroupByID(groupID int) error {
+	query := `DELETE FROM public.groups WHERE id=$1;`
+	_, err := database.Pool.Exec(context.TODO(), query, groupID)
+	return err
+}

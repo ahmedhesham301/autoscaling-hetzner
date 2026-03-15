@@ -1,14 +1,19 @@
 package controller
 
 import (
+	"autoscaling-hetzner/grafana"
+	"autoscaling-hetzner/hetzner"
 	"autoscaling-hetzner/model"
 	"autoscaling-hetzner/services"
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/grafana/grafana-openapi-client-go/client/provisioning"
+	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -75,4 +80,53 @@ func GetGroupByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, group)
+}
+
+func DeleteGroupByID(c *gin.Context) {
+	groupID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id must be a number"})
+		return
+	}
+
+	servers, err := model.GetAllServersInGroup(groupID)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		slog.Error("Failed to get all servers in a group", "error", err, "groupID", groupID)
+		return
+	}
+
+	for _, s := range servers {
+		for _, v := range s {
+			_, _, err = hetzner.HClient.Server.DeleteWithResult(context.TODO(), &hcloud.Server{ID: v.ID})
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				slog.Error("Failed to delete server from hetzner", "groupID", groupID, "serverName", v.Name, "error", err)
+				return
+			}
+
+			err = v.DeleteServer()
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				slog.Error("Failed to delete server from db", "groupID", groupID, "serverName", v.Name, "error", err)
+				return
+			}
+		}
+	}
+
+	err = model.DeleteGroupByID(groupID)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		slog.Error("Failed to delete group from db", "groupID", groupID, "error", err)
+		return
+	}
+
+	_, err = grafana.GClient.Provisioning.DeleteAlertRule(&provisioning.DeleteAlertRuleParams{UID: strconv.Itoa(groupID)})
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		slog.Error("Failed to delete alert rule", "groupID", groupID, "error", err)
+		return
+	}
+	c.Status(http.StatusOK)
+	slog.Info("group deleted", "groupID", groupID)
 }
