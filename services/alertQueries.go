@@ -35,7 +35,7 @@ func setupAlertQuery(group *model.Group) ([]*models.AlertQuery, error) {
 			},
 			"reducer": map[string]any{
 				"params": []any{},
-				"type":   "avg",
+				"type":   "last",
 			},
 			"type": "query",
 		}
