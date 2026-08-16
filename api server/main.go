@@ -2,11 +2,13 @@ package main
 
 import (
 	"autoscaling-hetzner/controller"
-	"autoscaling-hetzner/database"
-	"autoscaling-hetzner/grafana"
-	"autoscaling-hetzner/hetzner"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
 	"context"
 	"os"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/shared/database"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/shared/hetzner"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,8 +49,6 @@ func main() {
 	server.GET("/groups", controller.GetAllGroups)
 	server.GET("/groups/:id", controller.GetGroupByID)
 	server.DELETE("/groups/:id", controller.DeleteGroupByID)
-
-	server.POST("/webhooks/grafana/alerts", controller.ReceiveGrafanaWebhook)
 
 	server.GET("/targets", controller.GetTargets)
 

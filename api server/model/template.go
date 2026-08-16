@@ -1,7 +1,7 @@
 package model
 
 import (
-	"autoscaling-hetzner/database"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
 	"context"
 )
 

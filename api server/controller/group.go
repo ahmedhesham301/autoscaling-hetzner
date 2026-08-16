@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"autoscaling-hetzner/grafana"
-	"autoscaling-hetzner/hetzner"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
 	"autoscaling-hetzner/model"
 	"autoscaling-hetzner/services"
 	"context"

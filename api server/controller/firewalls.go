@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"autoscaling-hetzner/hetzner"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
 	"autoscaling-hetzner/services"
 	"context"
 	"log/slog"

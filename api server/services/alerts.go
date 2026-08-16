@@ -1,7 +1,7 @@
 package services
 
 import (
-	"autoscaling-hetzner/grafana"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
 	"autoscaling-hetzner/model"
 	"fmt"
 	"strconv"
