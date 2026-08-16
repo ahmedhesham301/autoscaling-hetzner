@@ -1,6 +1,7 @@
 package grafana
 
 import (
+	"fmt"
 	"log/slog"
 	"net/url"
 	"os"
@@ -21,6 +22,12 @@ func InitGrafana() {
 	grafanaHost, exists := os.LookupEnv("GRAFANA_HOST")
 	if !exists {
 		slog.Error("env var GRAFANA_HOST is not set")
+		os.Exit(1)
+	}
+
+	controllerHost, exists := os.LookupEnv("CONTROLLER_HOST")
+	if !exists {
+		slog.Error("env var CONTROLLER_HOST is not set")
 		os.Exit(1)
 	}
 
@@ -67,7 +74,7 @@ func InitGrafana() {
 			Name: "server",
 			Type: conv.Pointer("webhook"),
 			Settings: map[string]any{
-				"url": "http://server:8080/webhooks/grafana/alerts",
+				"url": fmt.Sprintf("http://%s:8080/webhooks/grafana/alerts", controllerHost),
 			},
 		}
 		_, err := GClient.Provisioning.PostContactpoints(provisioning.NewPostContactpointsParams().WithBody(&body))

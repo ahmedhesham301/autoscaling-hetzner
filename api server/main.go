@@ -23,9 +23,21 @@ func main() {
 	server.GET("/locations", controller.GetLocations)
 	server.GET("/images", controller.GetImages)
 	server.GET("/types", controller.GetTypes)
-	server.GET("/networks", controller.GetNetworks)
-	server.GET("/firewalls", controller.GetFirewalls)
-	server.GET("/keys", controller.GetSSHKeys)
+
+	server.GET("/networks", controller.GetAllNetworks)
+	server.GET("/networks/:id", controller.GetNetworkByID)
+	server.POST("/networks", controller.CreateNetwork)
+	server.DELETE("/networks/:id", controller.DeleteNetwork)
+
+	server.GET("/firewalls", controller.GetAllFirewalls)
+	server.GET("/firewalls/:id", controller.GetFirewallByID)
+	server.POST("/firewalls", controller.CreateFirewall)
+	server.DELETE("/firewalls/:id", controller.DeleteFirewall)
+
+	server.GET("/ssh_keys", controller.GetAllSSHKeys)
+	server.GET("/ssh_keys/:id", controller.GetSSHKeyByID)
+	server.POST("/ssh_keys", controller.CreateSSHKey)
+	server.DELETE("/ssh_keys/:id", controller.DeleteSSHKey)
 
 	server.POST("/templates", controller.CreateTemplate)
 	server.GET("/templates", controller.GetAllTemplates)
