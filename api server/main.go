@@ -22,7 +22,7 @@ func main() {
 
 	server.GET("/locations", controller.GetLocations)
 	server.GET("/images", controller.GetImages)
-	server.GET("/types", controller.GetTypes)
+	server.GET("/server_types", controller.GetServerTypes)
 
 	server.GET("/networks", controller.GetAllNetworks)
 	server.GET("/networks/:id", controller.GetNetworkByID)

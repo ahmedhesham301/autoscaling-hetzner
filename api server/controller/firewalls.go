@@ -2,6 +2,7 @@ package controller
 
 import (
 	"autoscaling-hetzner/hetzner"
+	"autoscaling-hetzner/services"
 	"context"
 	"log/slog"
 	"net/http"
@@ -18,7 +19,8 @@ func GetAllFirewalls(g *gin.Context) {
 		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	g.JSON(http.StatusOK, resp)
+	firewallSchemas := services.MapStructToSchema(resp, hcloud.SchemaFromFirewall)
+	g.JSON(http.StatusOK, firewallSchemas)
 }
 
 func CreateFirewall(g *gin.Context) {

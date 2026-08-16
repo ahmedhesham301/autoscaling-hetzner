@@ -2,6 +2,7 @@ package controller
 
 import (
 	"autoscaling-hetzner/hetzner"
+	"autoscaling-hetzner/services"
 	"context"
 	"log/slog"
 	"net/http"
@@ -18,7 +19,8 @@ func GetAllNetworks(g *gin.Context) {
 		g.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	g.JSON(http.StatusOK, resp)
+	networkSchemas := services.MapStructToSchema(resp, hcloud.SchemaFromNetwork)
+	g.JSON(http.StatusOK, networkSchemas)
 }
 
 func CreateNetwork(g *gin.Context) {

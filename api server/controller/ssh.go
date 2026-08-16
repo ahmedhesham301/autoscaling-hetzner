@@ -2,6 +2,7 @@ package controller
 
 import (
 	"autoscaling-hetzner/hetzner"
+	"autoscaling-hetzner/services"
 	"context"
 	"log/slog"
 	"net/http"
@@ -18,7 +19,8 @@ func GetAllSSHKeys(g *gin.Context) {
 		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	g.JSON(http.StatusOK, resp)
+	sshKeySchemas := services.MapStructToSchema(resp, hcloud.SchemaFromSSHKey)
+	g.JSON(http.StatusOK, sshKeySchemas)
 }
 
 func CreateSSHKey(g *gin.Context) {
