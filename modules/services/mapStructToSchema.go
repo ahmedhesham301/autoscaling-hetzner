@@ -9,3 +9,11 @@ func MapStructToSchema[I any, O any](items []I, mapper func(I) O) []O {
 
 	return result
 }
+
+func AppendManagedLabel(labels map[string]string) map[string]string {
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	labels["managed"] = "true"
+	return labels
+}

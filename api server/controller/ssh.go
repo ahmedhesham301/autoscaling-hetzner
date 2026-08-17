@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 	"context"
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
 
@@ -38,7 +39,7 @@ func CreateSSHKey(g *gin.Context) {
 	opts := hcloud.SSHKeyCreateOpts{
 		Name:      key.Name,
 		PublicKey: key.PublicKey,
-		Labels:    key.Labels,
+		Labels:    services.AppendManagedLabel(key.Labels),
 	}
 	if err := opts.Validate(); err != nil {
 		g.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

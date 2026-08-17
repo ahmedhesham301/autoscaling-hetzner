@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 	"context"
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
 
@@ -38,7 +39,7 @@ func CreateNetwork(g *gin.Context) {
 		IPRange:               network.IPRange,
 		Subnets:               network.Subnets,
 		Routes:                network.Routes,
-		Labels:                network.Labels,
+		Labels:                services.AppendManagedLabel(network.Labels),
 		ExposeRoutesToVSwitch: network.ExposeRoutesToVSwitch,
 	}
 

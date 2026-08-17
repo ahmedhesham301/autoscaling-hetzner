@@ -1,12 +1,13 @@
 package controller
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 	"context"
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
@@ -36,7 +37,7 @@ func CreateFirewall(g *gin.Context) {
 
 	opts := hcloud.FirewallCreateOpts{
 		Name:    firewall.Name,
-		Labels:  firewall.Labels,
+		Labels:  services.AppendManagedLabel(firewall.Labels),
 		Rules:   firewall.Rules,
 		ApplyTo: firewall.AppliedTo,
 	}
