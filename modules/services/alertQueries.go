@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
-	"autoscaling-hetzner/model"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/models"
 	"fmt"
 
 	"github.com/grafana/grafana-openapi-client-go/models"
