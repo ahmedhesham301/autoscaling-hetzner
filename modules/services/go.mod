@@ -1,4 +1,4 @@
-module github.com/ahmedhesham301/autoscaling-hetzner/services
+module github.com/ahmedhesham301/autoscaling-hetzner/modules/services
 
 go 1.26.5
 
