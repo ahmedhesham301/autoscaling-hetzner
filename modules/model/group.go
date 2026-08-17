@@ -1,4 +1,4 @@
-package models
+package model
 
 import (
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"

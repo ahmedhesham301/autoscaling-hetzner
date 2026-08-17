@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/models"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
 	"context"
 	"log/slog"
 	"math/rand/v2"
