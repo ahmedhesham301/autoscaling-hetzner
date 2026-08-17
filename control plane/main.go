@@ -22,5 +22,5 @@ func main() {
 
 	server.GET("/targets", controller.GetTargets)
 	
-	server.Run()
+	server.Run("0.0.0.0:8085")
 }
