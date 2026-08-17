@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"autoscaling-hetzner/model"
-	"autoscaling-hetzner/services"
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 
 	"github.com/gin-gonic/gin"
 )

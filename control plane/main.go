@@ -1,12 +1,11 @@
 package main
 
 import (
-	"autoscaling-hetzner/controller"
-	"autoscaling-hetzner/database"
-	"autoscaling-hetzner/grafana"
-	"autoscaling-hetzner/hetzner"
 	"context"
 	"os"
+	"github.com/ahmedhesham301/autoscaling-hetzner/control-plane/controller"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,13 +15,12 @@ func main() {
 
 	database.InitDB()
 	hetzner.SetupClient(ctx, os.Getenv("HKEY"))
-	grafana.InitGrafana()
 
 	server := gin.Default()
 
 	server.POST("/webhooks/grafana/alerts", controller.ReceiveGrafanaWebhook)
 
 	server.GET("/targets", controller.GetTargets)
-
+	
 	server.Run()
 }
