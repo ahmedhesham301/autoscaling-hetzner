@@ -50,7 +50,6 @@ func main() {
 	server.GET("/groups/:id", controller.GetGroupByID)
 	server.DELETE("/groups/:id", controller.DeleteGroupByID)
 
-	server.GET("/targets", controller.GetTargets)
 
 	server.Run()
 }
