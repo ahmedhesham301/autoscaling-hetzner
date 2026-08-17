@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"autoscaling-hetzner/services"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 	"context"
 	"log/slog"
 	"net/http"

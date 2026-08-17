@@ -3,13 +3,8 @@ module autoscaling-hetzner
 go 1.26.5
 
 require (
-	github.com/ahmedhesham301/autoscaling-hetzner/modules/database v0.0.0-20260816225639-a6cfb6c8eb1b
-	github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana v0.0.0-20260816224855-a5ab9ab50e5f
-	github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner v0.0.0-20260816225639-a6cfb6c8eb1b
-	github.com/ahmedhesham301/autoscaling-hetzner/shared v0.0.0-20260816215112-d1f9c25fc161
+	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260817110133-9671116b2cc0
 	github.com/gin-gonic/gin v1.11.0
-	github.com/go-openapi/strfmt v0.27.0
-	github.com/go-openapi/swag/conv v0.28.0
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20251202103709-7ef691d4df1d
 	github.com/hetznercloud/hcloud-go/v2 v2.47.0
 	github.com/jackc/pgx/v5 v5.10.0
@@ -33,8 +28,10 @@ require (
 	github.com/go-openapi/runtime v0.32.3 // indirect
 	github.com/go-openapi/runtime/server-middleware v0.30.0 // indirect
 	github.com/go-openapi/spec v0.22.5 // indirect
+	github.com/go-openapi/strfmt v0.27.0 // indirect
 	github.com/go-openapi/swag v0.26.0 // indirect
 	github.com/go-openapi/swag/cmdutils v0.26.0 // indirect
+	github.com/go-openapi/swag/conv v0.28.0 // indirect
 	github.com/go-openapi/swag/fileutils v0.26.0 // indirect
 	github.com/go-openapi/swag/jsonname v0.26.0 // indirect
 	github.com/go-openapi/swag/jsonutils v0.26.0 // indirect
@@ -81,11 +78,11 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
-	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
-	golang.org/x/tools v0.47.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/tools v0.48.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 )

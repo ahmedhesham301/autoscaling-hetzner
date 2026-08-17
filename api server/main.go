@@ -6,9 +6,9 @@ import (
 	"context"
 	"os"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/shared/database"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/shared/hetzner"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
 
 	"github.com/gin-gonic/gin"
 )
