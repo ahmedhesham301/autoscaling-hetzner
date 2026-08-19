@@ -20,17 +20,6 @@ func GetLocations(g *gin.Context) {
 	g.JSON(http.StatusOK, locationSchemas)
 }
 
-func GetImages(g *gin.Context) {
-	resp, err := hetzner.HClient.Image.All(context.Background())
-	if err != nil {
-		g.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	imageSchemas := services.MapStructToSchema(resp, hcloud.SchemaFromImage)
-
-	g.JSON(http.StatusOK, imageSchemas)
-}
-
 func GetServerTypes(g *gin.Context) {
 	resp, err := hetzner.HClient.ServerType.All(context.Background())
 	if err != nil {

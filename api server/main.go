@@ -2,9 +2,10 @@ package main
 
 import (
 	"autoscaling-hetzner/controller"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
 	"context"
 	"os"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
 
@@ -23,7 +24,6 @@ func main() {
 	server := gin.Default()
 
 	server.GET("/locations", controller.GetLocations)
-	server.GET("/images", controller.GetImages)
 	server.GET("/server_types", controller.GetServerTypes)
 
 	server.GET("/networks", controller.GetAllNetworks)
@@ -50,6 +50,13 @@ func main() {
 	server.GET("/groups/:id", controller.GetGroupByID)
 	server.DELETE("/groups/:id", controller.DeleteGroupByID)
 
+	server.GET("/servers", controller.GetAllServers)
+	server.GET("/servers/:id", controller.GetServerByID)
+	server.POST("/servers", controller.CreateServer)
+	server.DELETE("/servers/:id", controller.DeleteServer)
 
+	server.GET("/images", controller.GetAllImages)
+	server.GET("/images/:id", controller.GetImageByID)
+	server.DELETE("/images/:id", controller.DeleteImage)
 	server.Run()
 }

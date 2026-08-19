@@ -38,7 +38,7 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --web.enable-remote-write-receiver
-  
+
   alloy:
     image: grafana/alloy:v1.13.2
     container_name: alloy
