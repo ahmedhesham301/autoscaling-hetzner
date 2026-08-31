@@ -5,6 +5,7 @@ go 1.26.5
 require (
 	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260819143413-2f7e471a381d
 	github.com/gin-gonic/gin v1.12.0
+	github.com/hetznercloud/hcloud-go/v2 v2.47.0
 	go.temporal.io/sdk v1.48.0
 	go.temporal.io/sdk/contrib/envconfig v1.0.2
 )
@@ -57,7 +58,6 @@ require (
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20251202103709-7ef691d4df1d // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
-	github.com/hetznercloud/hcloud-go/v2 v2.47.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.10.0 // indirect
