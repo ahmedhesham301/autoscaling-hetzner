@@ -1,17 +1,17 @@
 services:
-  server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: server
-    restart: unless-stopped
-    ports:
-      - 8080:8080
-    env_file:
-      - .env.compose
-    depends_on:
-      db:
-        condition: service_healthy
+  # server:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: server
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8080:8080
+  #   env_file:
+  #     - .env.compose
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
 
   db:
     image: postgres:18-alpine
@@ -61,3 +61,10 @@ services:
       - '3000:3000'
     volumes:
       - ./configs/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+
+  vault:
+    image: hashicorp/vault:2.0
+    container_name: vault
+    restart: unless-stopped
+    ports:
+      - 8200:8200

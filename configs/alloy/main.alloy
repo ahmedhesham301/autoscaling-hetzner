@@ -9,7 +9,7 @@ livedebugging {
 }   
 
 discovery.http "targets" {
-  url = "http://server:8080/targets"
+  url = "http://172.17.0.1:8085/targets"
 }
 
 prometheus.scrape "scrape_targets" {

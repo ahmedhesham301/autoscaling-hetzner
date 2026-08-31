@@ -1,5 +1,7 @@
 github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260817110133-9671116b2cc0 h1:xSLGWvdZ5wF3nnkV4H4dmlIh1m/BTE1a03/A+7SiY6g=
 github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260817110133-9671116b2cc0/go.mod h1:h8nLBikFsHECJB67TMWWYCSn+acgXvkupkQS+NkVehg=
+github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260819143413-2f7e471a381d h1:RBo/VgWlfFU3QEzrkw8m6EGCuzm7piqyxPV61BiL/6Q=
+github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260819143413-2f7e471a381d/go.mod h1:TZwEwfAY+BapwiFHL9/x2utXawpGV51ROpGl2woEWak=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bytedance/sonic v1.14.0 h1:/OfKt8HFw0kh2rj8N0F6C/qPGRESq0BbaNZgcNXXzQQ=

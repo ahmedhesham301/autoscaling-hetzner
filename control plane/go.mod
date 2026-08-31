@@ -3,7 +3,7 @@ module github.com/ahmedhesham301/autoscaling-hetzner/control-plane
 go 1.26.5
 
 require (
-	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260817110133-9671116b2cc0
+	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260819143413-2f7e471a381d
 	github.com/gin-gonic/gin v1.12.0
 )
 
