@@ -14,14 +14,6 @@ import (
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )
 
-type ImageParams struct {
-	AppName    string `json:"app_name"`
-	AppVersion string `json:"app_version"`
-}
-
-// type DeployDBParams struct {
-// 	imageID int64
-// }
 
 func checkImageExist(ctx context.Context, params data.CreateServiceParams) (*int64, error) {
 	fmt.Println(services.ConvertToHetznerLabels(params.GetConfigMap()))
@@ -32,8 +24,7 @@ func checkImageExist(ctx context.Context, params data.CreateServiceParams) (*int
 			),
 		},
 	})
-	// fmt.Println(services.ConvertToHetznerLabels(
-	// 	map[string]string{"app_name": params.AppName, "app_version": params.AppVersion}))
+
 	if err != nil {
 		return nil, err
 	}
