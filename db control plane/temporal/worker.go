@@ -14,7 +14,7 @@ func StartWorker() {
 	w.RegisterWorkflow(CreateServiceWorkflow)
 	w.RegisterActivity(checkImageExist)
 	w.RegisterActivity(buildImage)
-	w.RegisterActivity(deployService)
+	w.RegisterActivity(deployDB)
 	err := w.Run(nil)
 	if err != nil {
 		log.Fatalln("Unable to start worker", err)

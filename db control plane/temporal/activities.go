@@ -14,8 +14,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )
 
-
-func checkImageExist(ctx context.Context, params data.CreateServiceParams) (*int64, error) {
+func checkImageExist(ctx context.Context, params data.CreateDBParams) (*int64, error) {
 	fmt.Println(services.ConvertToHetznerLabels(params.GetConfigMap()))
 	images, err := hetzner.HClient.Image.AllWithOpts(ctx, hcloud.ImageListOpts{
 		ListOpts: hcloud.ListOpts{
@@ -35,7 +34,7 @@ func checkImageExist(ctx context.Context, params data.CreateServiceParams) (*int
 
 }
 
-func buildImage(ctx context.Context, params data.CreateServiceParams) (*int64, error) {
+func buildImage(ctx context.Context, params data.CreateDBParams) (*int64, error) {
 	templatesPath, exists := os.LookupEnv("PACKER_TEMPLATES_PATH")
 	if !exists {
 		slog.Error("env var PACKER_TEMPLATES_PATH is not set")
@@ -57,7 +56,7 @@ func buildImage(ctx context.Context, params data.CreateServiceParams) (*int64, e
 	return &id, nil
 }
 
-func deployService(ctx context.Context, params data.CreateServiceParams, imageID int64) error {
+func deployDB(ctx context.Context, params data.CreateDBParams, imageID int64) error {
 	_, _, err := hetzner.HClient.Server.Create(ctx, hcloud.ServerCreateOpts{
 		Name:       params.AppName + params.AppVersion,
 		ServerType: &hcloud.ServerType{Name: params.ServerType},

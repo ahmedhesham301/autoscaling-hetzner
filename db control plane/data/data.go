@@ -8,7 +8,7 @@ type ServiceInfo struct {
 	Vars        map[string]string `json:"vars"`
 }
 
-type CreateServiceParams struct {
+type CreateDBParams struct {
 	AppName         string            `json:"app_name"`
 	AppVersion      string            `json:"app_version"`
 	Location        string            `json:"location"`
@@ -20,7 +20,7 @@ type CreateServiceParams struct {
 	ExtraLabels     map[string]string `json:"extra_labels"`
 }
 
-func (params CreateServiceParams) GetConfigMap() map[string]any {
+func (params CreateDBParams) GetConfigMap() map[string]any {
 	return map[string]any{
 		"app_name":         params.AppName,
 		"app_version":      params.AppVersion,
@@ -29,7 +29,7 @@ func (params CreateServiceParams) GetConfigMap() map[string]any {
 	}
 }
 
-func (params CreateServiceParams) GetConfigMapString() map[string]string {
+func (params CreateDBParams) GetConfigMapString() map[string]string {
 	result := make(map[string]string)
 	for k, v := range params.GetConfigMap() {
 		result[k] = fmt.Sprintf("%v", v)

@@ -14,7 +14,7 @@ import (
 )
 
 func CreateDatabase(g *gin.Context) {
-	var params data.CreateServiceParams
+	var params data.CreateDBParams
 	params.AppName = g.Param("serviceName")
 	if err := g.ShouldBindJSON(&params); err != nil {
 		g.JSON(http.StatusBadRequest, err.Error())
