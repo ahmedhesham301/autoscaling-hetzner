@@ -55,3 +55,17 @@ CREATE TABLE servers(
     private_ip INET NOT NULL
 );
 CREATE INDEX ON servers(group_id);
+
+CREATE TABLE databases(
+    id SERIAL PRIMARY KEY,
+    server_name VARCHAR,
+    server_id BIGINT,
+    kind VARCHAR NOT NULL,
+    location VARCHAR,
+    private_ip INET,
+    node_exporter BOOLEAN,
+    service_exporter BOOLEAN
+);
+CREATE INDEX ON databases(node_exporter);
+CREATE INDEX ON databases(service_exporter);
+

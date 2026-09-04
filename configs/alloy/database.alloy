@@ -1,0 +1,9 @@
+discovery.http "database_os_targets" {
+  url = "http://172.17.0.1:8090/services/os/targets"
+}
+
+prometheus.scrape "scrape_database_os_targets" {
+  targets    = discovery.http.database_os_targets.targets
+  forward_to = [prometheus.remote_write.prometheus.receiver]
+  scrape_interval = "30s"
+}

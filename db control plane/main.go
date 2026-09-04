@@ -23,6 +23,8 @@ func main() {
 	server.GET("/services", controller.ListMangedServices)
 	server.GET("/services/:serviceName", controller.GetMangedServiceCreateOps)
 
+	server.GET("/services/os/targets", controller.GetOSTargets)
+
 	// server.GET("/targets", controller.GetTargets)
 
 	server.Run("0.0.0.0:8090")

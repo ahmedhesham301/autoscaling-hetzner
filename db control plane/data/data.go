@@ -36,3 +36,8 @@ func (params CreateDBParams) GetConfigMapString() map[string]string {
 	}
 	return result
 }
+
+type Target struct {
+	Targets []string          `json:"targets"`
+	Labels  map[string]string `json:"labels"`
+}

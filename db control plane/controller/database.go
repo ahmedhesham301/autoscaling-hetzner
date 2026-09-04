@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
+	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/model"
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/temporal"
 	"github.com/gin-gonic/gin"
 	"go.temporal.io/sdk/client"
@@ -22,12 +23,19 @@ func CreateDatabase(g *gin.Context) {
 		return
 	}
 
+	DB_ID, err := model.CreateDBRecord(g, params)
+	if err != nil {
+		g.Status(http.StatusInternalServerError)
+		slog.Error("Failed to create database record", "error", err)
+		return
+	}
+
 	options := client.StartWorkflowOptions{
 		ID:        "create-service-workflow",
 		TaskQueue: "task-queue",
 	}
 
-	_, err := temporal.TemporalClient.ExecuteWorkflow(context.TODO(), options, temporal.CreateServiceWorkflow, params)
+	_, err = temporal.TemporalClient.ExecuteWorkflow(context.TODO(), options, temporal.CreateServiceWorkflow, params, DB_ID)
 	if err != nil {
 		g.Status(http.StatusInternalServerError)
 		slog.Error("Failed to bind body to go struct", "error", err)
@@ -82,4 +90,16 @@ func GetMangedServiceCreateOps(g *gin.Context) {
 	}
 	g.JSON(http.StatusOK, serviceInfo)
 
+}
+
+func GetOSTargets(g *gin.Context) {
+
+	targets, err := model.GetOSTargets(g)
+	if err != nil {
+		g.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		slog.Error("Failed to expose targets", "error", err)
+		return
+	}
+
+	g.JSON(http.StatusOK, targets)
 }

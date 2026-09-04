@@ -8,8 +8,10 @@ import (
 	"os/exec"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
+	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/model"
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/utils"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/random"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )
@@ -56,14 +58,29 @@ func buildImage(ctx context.Context, params data.CreateDBParams) (*int64, error)
 	return &id, nil
 }
 
-func deployDB(ctx context.Context, params data.CreateDBParams, imageID int64) error {
-	_, _, err := hetzner.HClient.Server.Create(ctx, hcloud.ServerCreateOpts{
-		Name:       params.AppName + params.AppVersion,
+func deployDB(ctx context.Context, params data.CreateDBParams, imageID int64, DB_ID int) error {
+	env, exists := os.LookupEnv("ENV")
+	if !exists {
+		slog.Error("env var ENV is not set")
+		os.Exit(1)
+	}
+	if env == "dev" {
+		params.PublicIPv4 = true
+		params.PublicIPv6 = true
+	}
+
+	server, _, err := hetzner.HClient.Server.Create(ctx, hcloud.ServerCreateOpts{
+		Name:       random.AddRandomLetters(params.AppName + "-" + params.AppVersion),
 		ServerType: &hcloud.ServerType{Name: params.ServerType},
 		Image:      &hcloud.Image{ID: imageID},
 		Location:   &hcloud.Location{Name: params.Location},
 		PublicNet:  &hcloud.ServerCreatePublicNet{EnableIPv4: params.PublicIPv4, EnableIPv6: params.PublicIPv6},
 		Labels:     services.AppendManagedLabel(params.GetConfigMapString()),
 	})
-	return err
+
+	if err != nil {
+		return err
+	}
+	return model.SaveDB(ctx, *server.Server, params, DB_ID)
+
 }
