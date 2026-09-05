@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/model"
@@ -14,9 +15,9 @@ import (
 	"go.temporal.io/sdk/client"
 )
 
-func CreateDatabase(g *gin.Context) {
+func CreateService(g *gin.Context) {
 	var params data.CreateDBParams
-	params.AppName = g.Param("serviceName")
+	params.AppName = g.Param("kind")
 	if err := g.ShouldBindJSON(&params); err != nil {
 		g.JSON(http.StatusBadRequest, err.Error())
 		slog.Error("Failed to bind body to createServiceParams struct ")
@@ -31,7 +32,7 @@ func CreateDatabase(g *gin.Context) {
 	}
 
 	options := client.StartWorkflowOptions{
-		ID:        "create-service-workflow",
+		ID:        "create-database-workflow" + strconv.Itoa(DB_ID),
 		TaskQueue: "task-queue",
 	}
 
@@ -67,7 +68,7 @@ func ListMangedServices(g *gin.Context) {
 }
 
 func GetMangedServiceCreateOps(g *gin.Context) {
-	serviceName := g.Param("serviceName")
+	serviceName := g.Param("kind")
 
 	templatesPath, exists := os.LookupEnv("PACKER_TEMPLATES_PATH")
 	if !exists {

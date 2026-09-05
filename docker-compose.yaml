@@ -40,7 +40,7 @@ services:
       - --web.enable-remote-write-receiver
 
   alloy:
-    image: grafana/alloy:v1.13.2
+    image: grafana/alloy:v1.19.2
     container_name: alloy
     restart: unless-stopped
     volumes:
@@ -52,6 +52,10 @@ services:
       --server.http.listen-addr=0.0.0.0:12345
       --storage.path=/var/lib/alloy/data
       /etc/alloy
+    environment:
+      - DATABASE_OS_TARGETS=http://172.17.0.1:8090/services/os/targets
+      - DB_CONTROL_PLANE_HOST=172.17.0.1
+      - DB_CONTROL_PLANE_PORT=8090
 
   grafana:
     image: grafana/grafana:12.3

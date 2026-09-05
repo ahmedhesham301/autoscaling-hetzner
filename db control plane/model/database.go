@@ -71,7 +71,7 @@ func GetOSTargets(ctx context.Context) (*[]data.Target, error) {
 			return nil, err
 		}
 		targets = append(targets, data.Target{
-			Targets: []string{ip.String()},
+			Targets: []string{ip.String() + ":9100"},
 			Labels: map[string]string{
 				"server_name": serverName,
 				"server_id":   strconv.FormatInt(serverID, 10),

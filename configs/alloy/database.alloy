@@ -1,9 +1,12 @@
+// OS metrics
 discovery.http "database_os_targets" {
-  url = "http://172.17.0.1:8090/services/os/targets"
+	url = format("http://%s:%s/services/monitoring/os/targets", sys.env("DB_CONTROL_PLANE_HOST"), sys.env("DB_CONTROL_PLANE_PORT"))
 }
 
 prometheus.scrape "scrape_database_os_targets" {
-  targets    = discovery.http.database_os_targets.targets
-  forward_to = [prometheus.remote_write.prometheus.receiver]
-  scrape_interval = "30s"
+	targets         = discovery.http.database_os_targets.targets
+	forward_to      = [prometheus.remote_write.prometheus.receiver]
+	scrape_interval = "30s"
 }
+
+// database metrics

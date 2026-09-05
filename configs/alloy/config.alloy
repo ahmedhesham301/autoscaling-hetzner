@@ -1,0 +1,9 @@
+livedebugging {
+  enabled = true
+}
+
+    prometheus.remote_write "prometheus" {
+    endpoint {
+        url = "http://prometheus:9090/api/v1/write"
+    }
+}   

@@ -19,11 +19,12 @@ func main() {
 	hetzner.SetupClient(ctx, os.Getenv("HKEY"))
 
 	server := gin.Default()
-	server.POST("/services/:serviceName", controller.CreateDatabase)
+	server.POST("/services/:kind", controller.CreateService)
 	server.GET("/services", controller.ListMangedServices)
-	server.GET("/services/:serviceName", controller.GetMangedServiceCreateOps)
+	server.GET("/services/:kind", controller.GetMangedServiceCreateOps)
 
-	server.GET("/services/os/targets", controller.GetOSTargets)
+	server.GET("/services/monitoring/os/targets", controller.GetOSTargets)
+	// server.GET("/services/monitoring/:kind/targets", controller.GetDatabaseTargets)
 
 	// server.GET("/targets", controller.GetTargets)
 

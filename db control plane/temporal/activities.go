@@ -43,7 +43,7 @@ func buildImage(ctx context.Context, params data.CreateDBParams) (*int64, error)
 		os.Exit(1)
 	}
 
-	cmd := exec.Command("packer", "build",
+	cmd := exec.Command("packer", "build", "-machine-readable",
 		"-var", fmt.Sprintf("config=%v", utils.ConvertMapToJsonString(params.GetConfigMap())),
 		templatesPath+"/"+params.AppName+"/main.pkr.hcl")
 
@@ -54,8 +54,8 @@ func buildImage(ctx context.Context, params data.CreateDBParams) (*int64, error)
 
 	fmt.Println(string(output))
 
-	var id int64 = 1
-	return &id, nil
+	id, err := utils.GetSnapshotID(output)
+	return &id, err
 }
 
 func deployDB(ctx context.Context, params data.CreateDBParams, imageID int64, DB_ID int) error {
