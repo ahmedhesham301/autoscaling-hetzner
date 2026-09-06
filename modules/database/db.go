@@ -13,7 +13,7 @@ var Pool *pgxpool.Pool
 func InitDB() {
 	databaseHost, exists := os.LookupEnv("DATABASE_HOST")
 	if !exists {
-		slog.Error("env var DATABASE_HOST is not set")
+		slog.Error("env var is not set", "var", "DATABASE_HOST")
 		os.Exit(1)
 	}
 

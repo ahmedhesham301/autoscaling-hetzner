@@ -1,15 +1,21 @@
 package hetzner
 
 import (
-	"context"
+	"log/slog"
+	"os"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )
 
 var HClient *hcloud.Client
 
-func SetupClient(ctx context.Context, token string) {
+func SetupClient() {
+	heyznerKey, exists := os.LookupEnv("HKEY")
+	if !exists {
+		slog.Error("env var is not set", "var", "HKEY")
+		os.Exit(1)
+	}
 	HClient = hcloud.NewClient(
-		hcloud.WithToken(token),
+		hcloud.WithToken(heyznerKey),
 	)
- }
+}

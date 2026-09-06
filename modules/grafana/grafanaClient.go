@@ -21,7 +21,7 @@ var ContactPointUid string
 func InitGrafana() {
 	grafanaHost, exists := os.LookupEnv("GRAFANA_HOST")
 	if !exists {
-		slog.Error("env var GRAFANA_HOST is not set")
+		slog.Error("env var is not set", "var", "GRAFANA_HOST")
 		os.Exit(1)
 	}
 
