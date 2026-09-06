@@ -2,6 +2,8 @@ github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0
 github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260819143413-2f7e471a381d h1:RBo/VgWlfFU3QEzrkw8m6EGCuzm7piqyxPV61BiL/6Q=
 github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260819143413-2f7e471a381d/go.mod h1:TZwEwfAY+BapwiFHL9/x2utXawpGV51ROpGl2woEWak=
+github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260906021117-546c389d2752 h1:FWmHjyoe2bXBk5L+9kiZ1otk4a4+KE9csI8gyeHUnGQ=
+github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260906021117-546c389d2752/go.mod h1:TZwEwfAY+BapwiFHL9/x2utXawpGV51ROpGl2woEWak=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bytedance/gopkg v0.1.3 h1:TPBSwH8RsouGCBcMBktLt1AymVo2TVsBVCY4b6TnZ/M=

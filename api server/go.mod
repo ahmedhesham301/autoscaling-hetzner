@@ -3,7 +3,7 @@ module autoscaling-hetzner
 go 1.26.5
 
 require (
-	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260819143413-2f7e471a381d
+	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260906021117-546c389d2752
 	github.com/gin-gonic/gin v1.11.0
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20251202103709-7ef691d4df1d
 	github.com/hetznercloud/hcloud-go/v2 v2.47.0
