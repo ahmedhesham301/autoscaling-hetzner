@@ -17,7 +17,6 @@ import (
 
 func CreateService(g *gin.Context) {
 	var params data.CreateDBParams
-	params.AppName = g.Param("kind")
 	if err := g.ShouldBindJSON(&params); err != nil {
 		g.JSON(http.StatusBadRequest, err.Error())
 		slog.Error("Failed to bind body to createServiceParams struct ")

@@ -17,7 +17,7 @@ func main() {
 	hetzner.SetupClient()
 
 	server := gin.Default()
-	server.POST("/services/:kind", controller.CreateService)
+	server.POST("/services", controller.CreateService)
 	server.GET("/services", controller.ListMangedServices)
 	server.GET("/services/:kind", controller.GetMangedServiceCreateOps)
 

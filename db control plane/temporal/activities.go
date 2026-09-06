@@ -3,7 +3,6 @@ package temporal
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/exec"
 
@@ -14,10 +13,10 @@ import (
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/random"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
+	"go.temporal.io/sdk/activity"
 )
 
 func checkImageExist(ctx context.Context, params data.CreateDBParams) (*int64, error) {
-	fmt.Println(services.ConvertToHetznerLabels(params.GetConfigMap()))
 	images, err := hetzner.HClient.Image.AllWithOpts(ctx, hcloud.ImageListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: services.ConvertToHetznerLabels(
@@ -37,33 +36,27 @@ func checkImageExist(ctx context.Context, params data.CreateDBParams) (*int64, e
 }
 
 func buildImage(ctx context.Context, params data.CreateDBParams) (*int64, error) {
-	templatesPath, exists := os.LookupEnv("PACKER_TEMPLATES_PATH")
-	if !exists {
-		slog.Error("env var PACKER_TEMPLATES_PATH is not set")
-		os.Exit(1)
-	}
+	logger := activity.GetLogger(ctx)
+	templatesPath := os.Getenv("PACKER_TEMPLATES_PATH")
 
-	cmd := exec.Command("packer", "build", "-machine-readable",
+	cmd := exec.CommandContext(ctx, "packer", "build", "-machine-readable",
 		"-var", fmt.Sprintf("config=%v", utils.ConvertMapToJsonString(params.GetConfigMap())),
 		templatesPath+"/"+params.AppName+"/main.pkr.hcl")
 
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		slog.Error("Command failed", "err", err)
+		logger.Error("packer build command failed", "err", err, "output", string(output))
+		return nil, err
 	}
-
-	fmt.Println(string(output))
+	logger.Info("packer build command output", "output", string(output))
 
 	id, err := utils.GetSnapshotID(output)
 	return &id, err
 }
 
 func deployDB(ctx context.Context, params data.CreateDBParams, imageID int64, DB_ID int) error {
-	env, exists := os.LookupEnv("ENV")
-	if !exists {
-		slog.Error("env var ENV is not set")
-		os.Exit(1)
-	}
+	env := os.Getenv("ENV")
+
 	if env == "dev" {
 		params.PublicIPv4 = true
 		params.PublicIPv6 = true

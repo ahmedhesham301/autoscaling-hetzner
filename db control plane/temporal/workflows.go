@@ -1,7 +1,6 @@
 package temporal
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
@@ -14,26 +13,27 @@ func CreateServiceWorkflow(ctx workflow.Context, params data.CreateDBParams, DB_
 	}
 
 	ctx = workflow.WithActivityOptions(ctx, activityOptions)
+	logger := workflow.GetLogger(ctx)
 
 	// Check if image exists
 	var imageID *int64
 	err := workflow.ExecuteActivity(ctx, checkImageExist, params).Get(ctx, &imageID)
 	if err != nil {
-		slog.Error("error checking if image exists", "err", err)
+		logger.Error("error checking if image exists", "err", err)
 		return err
 	}
 	// If not build it
 	if imageID == nil {
 		err := workflow.ExecuteActivity(ctx, buildImage, params).Get(ctx, &imageID)
 		if err != nil {
-			slog.Error("error building image", "err", err)
+			logger.Error("error building image", "err", err)
 			return err
 		}
 	}
 	// Deploy it
 	err = workflow.ExecuteActivity(ctx, deployDB, params, imageID, DB_ID).Get(ctx, nil)
 	if err != nil {
-		slog.Error("error building image", "err", err)
+		logger.Error("error building image", "err", err)
 		return err
 	}
 	return nil

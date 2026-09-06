@@ -62,6 +62,7 @@ func GetOSTargets(ctx context.Context) (*[]data.Target, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var ip net.IP
@@ -79,8 +80,6 @@ func GetOSTargets(ctx context.Context) (*[]data.Target, error) {
 			},
 		})
 	}
-
-	rows.Close()
 
 	if err := rows.Err(); err != nil {
 		return nil, err
