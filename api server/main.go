@@ -2,8 +2,6 @@ package main
 
 import (
 	"autoscaling-hetzner/controller"
-	"context"
-	"os"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
 
@@ -15,10 +13,9 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
 
 	database.InitDB()
-	hetzner.SetupClient(ctx, os.Getenv("HKEY"))
+	hetzner.SetupClient()
 	grafana.InitGrafana()
 
 	server := gin.Default()
