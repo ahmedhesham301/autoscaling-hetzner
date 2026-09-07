@@ -74,7 +74,7 @@ services:
       - 8200:8200
 
   temporal-postgresql:
-    image: postgres:18
+    image: postgres:18-alpine
     container_name: temporal-postgresql
     environment:
       POSTGRES_PASSWORD: temporal
