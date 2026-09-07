@@ -1,6 +1,7 @@
 package temporal
 
 import (
+	"os"
 	"time"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
@@ -25,6 +26,14 @@ func CreateServiceWorkflow(ctx workflow.Context, params data.CreateDBParams, DB_
 	// If not build it
 	if imageID == nil {
 		err := workflow.ExecuteActivity(ctx, buildImage, params).Get(ctx, &imageID)
+		if err != nil {
+			logger.Error("error building image", "err", err)
+			return err
+		}
+	}
+	// create a firewall that allows traffic if env is dev
+	if os.Getenv("ENV") == "dev" {
+		err = workflow.ExecuteActivity(ctx, GetOrCreateAllowAllFirewall).Get(ctx, &params.FirewallID)
 		if err != nil {
 			logger.Error("error building image", "err", err)
 			return err

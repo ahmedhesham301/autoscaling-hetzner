@@ -15,6 +15,7 @@ type CreateDBParams struct {
 	ServerType      string            `json:"server_type"`
 	PublicIPv4      bool              `json:"public_ipv4"`
 	PublicIPv6      bool              `json:"public_ipv6"`
+	FirewallID      *int64            `json:"firewall_id"`
 	NodeExporter    bool              `json:"node_exporter"`
 	ServiceExporter bool              `json:"service_exporter"`
 	ExtraLabels     map[string]string `json:"extra_labels"`

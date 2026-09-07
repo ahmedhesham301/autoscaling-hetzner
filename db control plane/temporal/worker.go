@@ -15,6 +15,7 @@ func StartWorker() {
 	w.RegisterActivity(checkImageExist)
 	w.RegisterActivity(buildImage)
 	w.RegisterActivity(deployDB)
+	w.RegisterActivity(GetOrCreateAllowAllFirewall)
 	err := w.Run(nil)
 	if err != nil {
 		log.Fatalln("Unable to start worker", err)

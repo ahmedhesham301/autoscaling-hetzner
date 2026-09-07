@@ -69,11 +69,8 @@ func ListMangedServices(g *gin.Context) {
 func GetMangedServiceCreateOps(g *gin.Context) {
 	serviceName := g.Param("kind")
 
-	templatesPath, exists := os.LookupEnv("PACKER_TEMPLATES_PATH")
-	if !exists {
-		slog.Error("env var PACKER_TEMPLATES_PATH is not set")
-		os.Exit(1)
-	}
+	templatesPath :=os.Getenv("PACKER_TEMPLATES_PATH")
+
 
 	content, err := os.ReadFile(templatesPath + "/" + serviceName + "/info.json")
 	if err != nil {
