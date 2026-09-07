@@ -21,4 +21,6 @@ WORKDIR /app
 
 COPY --from=build /app/db-control-plane .
 
+EXPOSE 8090
+
 CMD [ "./db-control-plane" ]
