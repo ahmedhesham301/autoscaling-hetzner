@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  push:
+    paths:
+      - 'db control plane/**'
+jobs:
+
+  ci:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v7.0.1
+
+    - name: login to dockerhub
+      uses: docker/login-action@v4.5.1
+      with:
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push
+      uses: docker/build-push-action@v7.3.0
+      with:
+        context: 'backend'
+        file: 'db control plane/Dockerfile'
+        push: true
+        tags: ahmedhesham301/hetzner-db-control-plane:latest
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@v0.36.0
+      with:
+        image-ref: 'ahmedhesham301/hetzner-db-control-plane:latest'
+        format: 'template'
+        template: '@/contrib/sarif.tpl'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v4.37.3
+      with:
+        sarif_file: 'trivy-results.sarif'
