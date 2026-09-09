@@ -23,7 +23,7 @@ services:
       - TARGET_ENV=hetzner
       - TEMPORAL_ADDRESS=temporal:7233
       - DATABASE_HOST=db
-      - PACKER_TEMPLATES_PATH="/packer-templates"
+      - PACKER_TEMPLATES_PATH=/packer-templates
     env_file:
       - .env.compose
     volumes:
