@@ -13,6 +13,29 @@ services:
   #     db:
   #       condition: service_healthy
 
+  db-control-plane:
+    image: ahmedhesham301/hetzner-db-control-plane:latest
+    container_name: db-control-plane
+    restart: unless-stopped
+    ports:
+      - 8090:8090
+    environment:
+      - TARGET_ENV=hetzner
+      - TEMPORAL_ADDRESS=temporal:7233
+      - DATABASE_HOST=db
+      - PACKER_TEMPLATES_PATH="/packer-templates"
+    env_file:
+      - .env.compose
+    volumes:
+      - ./packer-templates:/packer-templates:ro
+    depends_on:
+      temporal:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      alloy:
+        condition: service_started
+
   db:
     image: postgres:18-alpine
     container_name: db
@@ -76,6 +99,7 @@ services:
   temporal-postgresql:
     image: postgres:18-alpine
     container_name: temporal-postgresql
+    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: temporal
       POSTGRES_USER: temporal
@@ -108,6 +132,7 @@ services:
   temporal:
     image: temporalio/server:1.31
     container_name: temporal
+    restart: unless-stopped
     depends_on:
       temporal-admin-tools:
         condition: service_completed_successfully
@@ -141,7 +166,7 @@ services:
       - TEMPORAL_ADDRESS=temporal:7233
       - DEFAULT_NAMESPACE=default
     volumes:
-      - ./scripts:/scripts
+      - ./scripts/temporal:/scripts
     entrypoint: ["/bin/sh"]
     command: /scripts/create-namespace.sh
 
@@ -154,6 +179,6 @@ services:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_CORS_ORIGINS=http://localhost:3000
     image: temporalio/ui:2.53.3
-
+    restart: unless-stopped
     ports:
       - 2000:8080
