@@ -1,0 +1,47 @@
+scope: standalone-postgres
+namespace: /service
+name: node1
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: 127.0.0.1:8008
+
+etcd3:
+  hosts:
+    - 127.0.0.1:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        max_connections: 100
+        shared_buffers: 128MB
+        logging_collector: "on"
+        log_directory: "/var/log/postgresql"
+
+  initdb:
+    - encoding: UTF8
+    - locale: C.UTF8
+    - data-checksums
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: 127.0.0.1:5432
+  data_dir: /data
+  bin_dir: /usr/lib/postgresql/18/bin
+  pg_hba:
+    - host all all 0.0.0.0/0 scram-sha-256
+  authentication:
+    superuser:
+      username: master
+      password: "1234"
+
+log:
+  type: plain
+  level: INFO

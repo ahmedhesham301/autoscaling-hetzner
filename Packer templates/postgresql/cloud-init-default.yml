@@ -1,0 +1,4 @@
+#cloud-config
+growpart:
+  mode: "off"
+resize_rootfs: false
