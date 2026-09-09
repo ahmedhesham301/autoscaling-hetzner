@@ -38,21 +38,12 @@ func checkImageExist(ctx context.Context, params data.CreateDBParams) (*int64, e
 
 func buildImage(ctx context.Context, params data.CreateDBParams, env string, templatesPath string) (*int64, error) {
 	logger := activity.GetLogger(ctx)
-
-	cmd := exec.CommandContext(ctx, "packer", "init", "-machine-readable",
-		templatesPath+"/"+params.AppName+"/main.pkr.hcl")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		logger.Error("packer init command failed", "err", err, "output", string(output))
-		return nil, err
-	}
-
-	cmd = exec.CommandContext(ctx, "packer", "build", "-machine-readable",
+	cmd := exec.CommandContext(ctx, "packer", "build", "-machine-readable",
 		"-var", fmt.Sprintf("config=%v", utils.ConvertMapToJsonString(params.GetConfigMap())),
 		"-var", fmt.Sprintf("ENV=%v", env),
 		templatesPath+"/"+params.AppName+"/main.pkr.hcl")
 
-	output, err = cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Error("packer build command failed", "err", err, "output", string(output))
 		return nil, err

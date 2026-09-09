@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install wget gnupg -y && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list && \
     apt-get update && apt-get install packer
 
+RUN packer plugins install github.com/hetznercloud/hcloud
+
 WORKDIR /app
 
 COPY --from=build /app/db-control-plane .
