@@ -17,15 +17,21 @@ variable "hcloud_token" {
   sensitive = true
 }
 
-variable "target_env" {
+variable "build_target" {
   type      = string
-  default   = env("TARGET_ENV")
+  default   = env("BUILD_TARGET")
   sensitive = false
 }
 
-variable "ENV" {
+variable "env" {
   type      = string
   sensitive = false
+}
+
+variable "networkID" {
+  type      = number
+  sensitive = false
+  default   = null
 }
 
 variable "config" {
@@ -46,14 +52,16 @@ variable "config" {
 
 
 source "hcloud" "postgresql" {
-  token           = var.hcloud_token
-  image           = "debian-13"
-  user_data       = file("cloud-init-default.yml")
-  location        = "nbg1"
-  server_type     = "cx23"
-  ssh_username    = "root"
-  snapshot_labels = var.config
-  private_ipv4    = var.ENV != "dev" ? true : false
+  token                = var.hcloud_token
+  image                = "debian-13"
+  user_data            = file("cloud-init-default.yml")
+  location             = "nbg1"
+  server_type          = "cx23"
+  ssh_username         = "root"
+  snapshot_labels      = var.config
+  networks             = var.env == "dev" && var.networkID != null ? [var.networkID] : []
+  public_ipv4_disabled = var.env != "dev" ? true : false
+  public_ipv6_disabled = var.env != "dev" ? true : false
 }
 
 source "vagrant" "postgresql" {
@@ -66,7 +74,7 @@ source "vagrant" "postgresql" {
 }
 
 build {
-  sources = var.target_env == "hetzner" ? ["source.hcloud.postgresql"] : ["source.vagrant.postgresql"]
+  sources = var.build_target == "hetzner" ? ["source.hcloud.postgresql"] : ["source.vagrant.postgresql"]
 
   provisioner "file" {
     source      = "${path.root}/patroni-config.yml"

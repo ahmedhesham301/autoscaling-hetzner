@@ -36,13 +36,19 @@ func checkImageExist(ctx context.Context, params data.CreateDBParams) (*int64, e
 
 }
 
-func buildImage(ctx context.Context, params data.CreateDBParams, env string, templatesPath string) (*int64, error) {
-	logger := activity.GetLogger(ctx)
-	cmd := exec.CommandContext(ctx, "packer", "build", "-machine-readable",
+func buildImage(ctx context.Context, params data.CreateDBParams, env string, templatesPath string, networkID *int64) (*int64, error) {
+	args := []string{
+		"build", "-machine-readable",
 		"-var", fmt.Sprintf("config=%v", utils.ConvertMapToJsonString(params.GetConfigMap())),
-		"-var", fmt.Sprintf("ENV=%v", env),
-		templatesPath+"/"+params.AppName+"/main.pkr.hcl")
+		"-var", fmt.Sprintf("env=%v", env),
+	}
+	if networkID != nil {
+		args = append(args, "-var", fmt.Sprintf("networkID=%v", *networkID))
+	}
+	args = append(args, templatesPath+"/"+params.AppName+"/main.pkr.hcl")
 
+	logger := activity.GetLogger(ctx)
+	cmd := exec.CommandContext(ctx, "packer", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Error("packer build command failed", "err", err, "output", string(output))

@@ -7,7 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func CreateServiceWorkflow(ctx workflow.Context, params data.CreateDBParams, DB_ID int, env string, templatesPath string) error {
+func CreateServiceWorkflow(ctx workflow.Context, params data.CreateDBParams, DB_ID int, env string, templatesPath string, networkID *int64) error {
 	activityOptions := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute * 15,
 	}
@@ -24,7 +24,7 @@ func CreateServiceWorkflow(ctx workflow.Context, params data.CreateDBParams, DB_
 	}
 	// If not build it
 	if imageID == nil {
-		err := workflow.ExecuteActivity(ctx, buildImage, params, env, templatesPath).Get(ctx, &imageID)
+		err := workflow.ExecuteActivity(ctx, buildImage, params, env, templatesPath, networkID).Get(ctx, &imageID)
 		if err != nil {
 			logger.Error("error building image", "err", err)
 			return err

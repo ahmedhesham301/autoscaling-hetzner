@@ -38,7 +38,18 @@ func CreateService(g *gin.Context) {
 	env := os.Getenv("ENV")
 	templatesPath := os.Getenv("PACKER_TEMPLATES_PATH")
 
-	_, err = temporal.TemporalClient.ExecuteWorkflow(context.TODO(), options, temporal.CreateServiceWorkflow, params, DB_ID, env, templatesPath)
+	var networkID *int64
+	networkvar, exists := os.LookupEnv("networkID")
+	if exists {
+		id, err := strconv.ParseInt(networkvar, 10, 64)
+		if err != nil {
+			g.Status(http.StatusInternalServerError)
+			slog.Error("Failed to Parse network id", "error", err)
+			return
+		}
+		networkID = &id
+	}
+	_, err = temporal.TemporalClient.ExecuteWorkflow(context.TODO(), options, temporal.CreateServiceWorkflow, params, DB_ID, env, templatesPath, networkID)
 	if err != nil {
 		g.Status(http.StatusInternalServerError)
 		slog.Error("Failed to Execute workflow", "error", err)
