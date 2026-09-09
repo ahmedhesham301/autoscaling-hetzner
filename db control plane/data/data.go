@@ -3,9 +3,9 @@ package data
 import "fmt"
 
 type ServiceInfo struct {
-	AppName     string            `json:"app_name"`
-	AppVersions []string          `json:"app_versions"`
-	Vars        map[string]string `json:"vars"`
+	AppName     string         `json:"app_name"`
+	AppVersions []string       `json:"app_versions"`
+	Vars        map[string]any `json:"vars"`
 }
 
 type CreateDBParams struct {

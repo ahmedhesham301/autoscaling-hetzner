@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"log/slog"
 	"net"
 	"os"
 	"strconv"
@@ -20,12 +19,7 @@ var healthPaths = map[string]string{
 }
 
 func SaveDB(ctx context.Context, server hcloud.Server, params data.CreateDBParams, DB_ID int) error {
-	env, exists := os.LookupEnv("ENV")
-	if !exists {
-		slog.Error("env var ENV is not set")
-		os.Exit(1)
-	}
-
+	env := os.Getenv("ENV")
 	var ip string
 	if env == "dev" {
 		ip = server.PublicNet.IPv4.IP.String()

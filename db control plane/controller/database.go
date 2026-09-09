@@ -35,21 +35,20 @@ func CreateService(g *gin.Context) {
 		TaskQueue: "task-queue",
 	}
 
-	_, err = temporal.TemporalClient.ExecuteWorkflow(context.TODO(), options, temporal.CreateServiceWorkflow, params, DB_ID)
+	env := os.Getenv("ENV")
+	templatesPath := os.Getenv("PACKER_TEMPLATES_PATH")
+
+	_, err = temporal.TemporalClient.ExecuteWorkflow(context.TODO(), options, temporal.CreateServiceWorkflow, params, DB_ID, env, templatesPath)
 	if err != nil {
 		g.Status(http.StatusInternalServerError)
-		slog.Error("Failed to bind body to go struct", "error", err)
+		slog.Error("Failed to Execute workflow", "error", err)
 		return
 	}
+	g.JSON(http.StatusAccepted, gin.H{"id": DB_ID})
 }
 
 func ListMangedServices(g *gin.Context) {
-	templatesPath, exists := os.LookupEnv("PACKER_TEMPLATES_PATH")
-	if !exists {
-		slog.Error("env var PACKER_TEMPLATES_PATH is not set")
-		g.Status(http.StatusInternalServerError)
-		return
-	}
+	templatesPath := os.Getenv("PACKER_TEMPLATES_PATH")
 
 	files, err := os.ReadDir(templatesPath)
 	if err != nil {
@@ -69,8 +68,7 @@ func ListMangedServices(g *gin.Context) {
 func GetMangedServiceCreateOps(g *gin.Context) {
 	serviceName := g.Param("kind")
 
-	templatesPath :=os.Getenv("PACKER_TEMPLATES_PATH")
-
+	templatesPath := os.Getenv("PACKER_TEMPLATES_PATH")
 
 	content, err := os.ReadFile(templatesPath + "/" + serviceName + "/info.json")
 	if err != nil {
