@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	config.ValidateEnvVars([]string{"TARGET_ENV", "ENV", "PACKER_TEMPLATES_PATH"})
+	config.ValidateEnvVars([]string{"BUILD_TARGET", "ENV", "PACKER_TEMPLATES_PATH"})
 	temporal.SetupClient()
 	go temporal.StartWorker()
 	database.InitDB()
