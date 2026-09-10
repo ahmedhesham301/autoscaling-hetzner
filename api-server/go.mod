@@ -3,7 +3,7 @@ module api-server
 go 1.26.5
 
 require (
-	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910045351-ce98b83bda30
+	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910072839-1c4b300eeee1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20251202103709-7ef691d4df1d
 	github.com/hetznercloud/hcloud-go/v2 v2.47.0
