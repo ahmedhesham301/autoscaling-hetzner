@@ -60,8 +60,8 @@ source "hcloud" "postgresql" {
   ssh_username         = "root"
   snapshot_labels      = var.config
   networks = var.networkID != null ? [var.networkID] : []
-  public_ipv4_disabled = var.env != "dev" ? true : false
-  public_ipv6_disabled = var.env != "dev" ? true : false
+  # public_ipv4_disabled = var.env != "dev" ? true : false
+  # public_ipv6_disabled = var.env != "dev" ? true : false
 }
 
 source "vagrant" "postgresql" {
