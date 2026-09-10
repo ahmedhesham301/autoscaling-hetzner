@@ -252,7 +252,7 @@ HKEY=your_hetzner_api_token_here
 ENV=dev
 
 # Optional Hetzner Private Network ID (required if using private networks)
-network=12345678
+networkID=12345678
 ```
 
 The Docker Compose setup maps database hosts and internal networking automatically:
