@@ -16,4 +16,6 @@ WORKDIR /app
 
 COPY --from=build /app/api-server .
 
+EXPOSE 8080
+
 CMD [ "./api-server" ]

@@ -16,4 +16,6 @@ WORKDIR /app
 
 COPY --from=build /app/control-plane .
 
+EXPOSE 8085
+
 CMD [ "./control-plane" ]
