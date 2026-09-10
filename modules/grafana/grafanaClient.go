@@ -31,6 +31,12 @@ func InitGrafana() {
 		os.Exit(1)
 	}
 
+	controllerPort, exists := os.LookupEnv("CONTROLLER_PORT")
+	if !exists {
+		slog.Error("env var is not set", "var", "CONTROLLER_HOST")
+		os.Exit(1)
+	}
+
 	GClient = gapi.NewHTTPClientWithConfig(strfmt.Default, &gapi.TransportConfig{
 		Host:      grafanaHost,
 		BasePath:  "/api",
@@ -74,7 +80,7 @@ func InitGrafana() {
 			Name: "server",
 			Type: conv.Pointer("webhook"),
 			Settings: map[string]any{
-				"url": fmt.Sprintf("http://%s:8080/webhooks/grafana/alerts", controllerHost),
+				"url": fmt.Sprintf("http://%s:%s/webhooks/grafana/alerts", controllerHost, controllerPort),
 			},
 		}
 		_, err := GClient.Provisioning.PostContactpoints(provisioning.NewPostContactpointsParams().WithBody(&body))
