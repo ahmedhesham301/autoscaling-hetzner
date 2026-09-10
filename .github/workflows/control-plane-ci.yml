@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "control-plane/**"
+      - "modules/**"
 jobs:
   ci:
     permissions:

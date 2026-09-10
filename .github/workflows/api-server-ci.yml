@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "api-server/**"
+      - "modules/**"
 jobs:
   ci:
     permissions:
