@@ -4,10 +4,10 @@ packer {
       source  = "github.com/hetznercloud/hcloud"
       version = "~> 1"
     }
-    vagrant = {
-      version = "~> 1"
-      source  = "github.com/hashicorp/vagrant"
-    }
+    # vagrant = {
+    #   version = "~> 1"
+    #   source  = "github.com/hashicorp/vagrant"
+    # }
   }
 }
 
