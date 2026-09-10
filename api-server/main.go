@@ -1,7 +1,7 @@
 package main
 
 import (
-	"autoscaling-hetzner/controller"
+	"api-server/controller"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
 

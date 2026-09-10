@@ -3,7 +3,7 @@ module github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane
 go 1.26.5
 
 require (
-	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260906021117-546c389d2752
+	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910045351-ce98b83bda30
 	github.com/gin-gonic/gin v1.12.0
 	github.com/hetznercloud/hcloud-go/v2 v2.47.0
 	go.temporal.io/sdk v1.48.0

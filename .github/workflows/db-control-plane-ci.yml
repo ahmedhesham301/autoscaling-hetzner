@@ -1,10 +1,10 @@
-name: db control plane ci
+name: db-control-plane ci
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - "db control plane/**"
+      - "db-control-plane/**"
 jobs:
   ci:
     permissions:
@@ -26,8 +26,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7.3.0
         with:
-          context: "db control plane"
-          file: "db control plane/Dockerfile"
+          context: "db-control-plane"
+          file: "db-control-plane/Dockerfile"
           push: true
           tags: ahmedhesham301/hetzner-db-control-plane:latest
       - name: Run Trivy vulnerability scanner
