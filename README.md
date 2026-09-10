@@ -208,18 +208,18 @@ sequenceDiagram
 
 ## Service Ports & Components Matrix
 
-| Service | Container Port | Host Port | Purpose | Default Credentials / URL |
-| :--- | :--- | :--- | :--- | :--- |
-| **`api-server`** | `8080` | `8080` | Infrastructure & Autoscaling Group API | `http://localhost:8080` |
-| **`control-plane`** | `8085` | `8085` | Webhook receiver & Alloy target discovery | `http://localhost:8085` |
-| **`db-control-plane`** | `8090` | `8090` | Managed DBaaS & Temporal Worker | `http://localhost:8090` |
-| **`grafana`** | `3000` | `3000` | Dashboards, alert rules & webhook triggers | `admin` / `admin` (`http://localhost:3000`) |
-| **`prometheus`** | `9090` | `9090` | Time-series metrics backend (`remote_write` enabled) | `http://localhost:9090` |
-| **`db`** | `5432` | `5432` | Metadata PostgreSQL database | `postgres` / `1234` |
-| **`temporal`** | `7233` | `7233` | Temporal gRPC workflow server | `localhost:7233` |
-| **`temporal-ui`** | `8080` | `2000` | Temporal Web UI for monitoring workflows | `http://localhost:2000` |
-| **`alloy`** | `12345` | `12345` | Grafana Alloy metrics collector & scraper | `http://localhost:12345` |
-| **`vault`** | `8200` | `8200` | HashiCorp Vault for secrets management | `http://localhost:8200` |
+| Service                | Container Port | Host Port | Purpose                                              | Default Credentials / URL                   |
+| :--------------------- | :------------- | :-------- | :--------------------------------------------------- | :------------------------------------------ |
+| **`api-server`**       | `8080`         | `8080`    | Infrastructure & Autoscaling Group API               | `http://localhost:8080`                     |
+| **`control-plane`**    | `8085`         | `8085`    | Webhook receiver & Alloy target discovery            | `http://localhost:8085`                     |
+| **`db-control-plane`** | `8090`         | `8090`    | Managed DBaaS & Temporal Worker                      | `http://localhost:8090`                     |
+| **`grafana`**          | `3000`         | `3000`    | Dashboards, alert rules & webhook triggers           | `admin` / `admin` (`http://localhost:3000`) |
+| **`prometheus`**       | `9090`         | `9090`    | Time-series metrics backend (`remote_write` enabled) | `http://localhost:9090`                     |
+| **`db`**               | `5432`         | `5432`    | Metadata PostgreSQL database                         | `postgres` / `1234`                         |
+| **`temporal`**         | `7233`         | `7233`    | Temporal gRPC workflow server                        | `localhost:7233`                            |
+| **`temporal-ui`**      | `8080`         | `2000`    | Temporal Web UI for monitoring workflows             | `http://localhost:2000`                     |
+| **`alloy`**            | `12345`        | `12345`   | Grafana Alloy metrics collector & scraper            | `http://localhost:12345`                    |
+| **`vault`**            | `8200`         | `8200`    | HashiCorp Vault for secrets management               | `http://localhost:8200`                     |
 
 ---
 
@@ -233,12 +233,12 @@ sequenceDiagram
 
 The system supports two execution environments configured via the `ENV` variable:
 
-| Feature | `ENV=prod` (Recommended for Hetzner) | `ENV=dev` (Local Testing) |
-| :--- | :--- | :--- |
-| **Scraping Target IP** | Uses Hetzner private network IP (`res.Server.PrivateNet[0].IP`). | Uses public IPv4 (`res.Server.PublicNet.IPv4.IP`). |
-| **Network Requirements** | Control plane must be inside the same Hetzner private network. | Control plane can run locally or outside Hetzner. |
-| **Template Public IPs** | Optional; instances can operate purely on private networks. | `publicIPv4` must be enabled. |
-| **Firewall Provisioning** | Uses firewalls specified in templates. | Automatically creates and attaches an `allow_all` firewall. |
+| Feature                   | `ENV=prod` (Recommended for Hetzner)                             | `ENV=dev` (Local Testing)                                   |
+| :------------------------ | :--------------------------------------------------------------- | :---------------------------------------------------------- |
+| **Scraping Target IP**    | Uses Hetzner private network IP (`res.Server.PrivateNet[0].IP`). | Uses public IPv4 (`res.Server.PublicNet.IPv4.IP`).          |
+| **Network Requirements**  | Control plane must be inside the same Hetzner private network.   | Control plane can run locally or outside Hetzner.           |
+| **Template Public IPs**   | Optional; instances can operate purely on private networks.      | `publicIPv4` must be enabled.                               |
+| **Firewall Provisioning** | Uses firewalls specified in templates.                           | Automatically creates and attaches an `allow_all` firewall. |
 
 ### Configuration File (`.env.compose`)
 
@@ -256,6 +256,7 @@ networkID=12345678
 ```
 
 The Docker Compose setup maps database hosts and internal networking automatically:
+
 - `DATABASE_HOST=db`
 - `GRAFANA_HOST=grafana:3000`
 - `CONTROLLER_HOST=control-plane`
@@ -292,6 +293,7 @@ docker compose up -d --build
 ### 4. Automated Startup & Health Checks
 
 When Docker Compose starts:
+
 1. PostgreSQL initializes tables using `configs/schema.sql`.
 2. `temporal-postgresql` starts and `temporal-admin-tools` executes `scripts/temporal/setup-postgres.sh` to initialize schemas.
 3. `temporal-create-namespace` runs `scripts/temporal/create-namespace.sh` to ensure the `default` namespace is ready.
@@ -308,30 +310,30 @@ Base URL: `http://localhost:8080`
 
 #### 1. Discovery & Cloud Resources
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/locations` | List available Hetzner locations (e.g. `fsn1`, `nbg1`, `hel1`). |
-| `GET` | `/server_types` | List available Hetzner server types (e.g. `cx23`, `cpx31`). |
-| `GET` | `/images` | List available OS and snapshot images. |
-| `GET` | `/images/:id` | Get image details by ID. |
-| `DELETE`| `/images/:id` | Delete an image by ID. |
+| Method   | Endpoint        | Description                                                     |
+| :------- | :-------------- | :-------------------------------------------------------------- |
+| `GET`    | `/locations`    | List available Hetzner locations (e.g. `fsn1`, `nbg1`, `hel1`). |
+| `GET`    | `/server_types` | List available Hetzner server types (e.g. `cx23`, `cpx31`).     |
+| `GET`    | `/images`       | List available OS and snapshot images.                          |
+| `GET`    | `/images/:id`   | Get image details by ID.                                        |
+| `DELETE` | `/images/:id`   | Delete an image by ID.                                          |
 
 #### 2. Network & Security Management
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/networks` | List private networks. |
-| `GET` | `/networks/:id` | Get network details by ID. |
-| `POST` | `/networks` | Create a new private network. |
-| `DELETE`| `/networks/:id` | Delete a private network. |
-| `GET` | `/firewalls` | List firewalls. |
-| `GET` | `/firewalls/:id` | Get firewall by ID. |
-| `POST` | `/firewalls` | Create a firewall. |
-| `DELETE`| `/firewalls/:id` | Delete a firewall. |
-| `GET` | `/ssh_keys` | List SSH keys. |
-| `GET` | `/ssh_keys/:id` | Get SSH key by ID. |
-| `POST` | `/ssh_keys` | Upload an SSH key (`name`, `public_key`). |
-| `DELETE`| `/ssh_keys/:id` | Delete an SSH key. |
+| Method   | Endpoint         | Description                               |
+| :------- | :--------------- | :---------------------------------------- |
+| `GET`    | `/networks`      | List private networks.                    |
+| `GET`    | `/networks/:id`  | Get network details by ID.                |
+| `POST`   | `/networks`      | Create a new private network.             |
+| `DELETE` | `/networks/:id`  | Delete a private network.                 |
+| `GET`    | `/firewalls`     | List firewalls.                           |
+| `GET`    | `/firewalls/:id` | Get firewall by ID.                       |
+| `POST`   | `/firewalls`     | Create a firewall.                        |
+| `DELETE` | `/firewalls/:id` | Delete a firewall.                        |
+| `GET`    | `/ssh_keys`      | List SSH keys.                            |
+| `GET`    | `/ssh_keys/:id`  | Get SSH key by ID.                        |
+| `POST`   | `/ssh_keys`      | Upload an SSH key (`name`, `public_key`). |
+| `DELETE` | `/ssh_keys/:id`  | Delete an SSH key.                        |
 
 #### 3. Server Templates
 
@@ -362,7 +364,7 @@ Creating an autoscaling group immediately provisions `desiredSize` instances, ba
 - `POST /groups`
 - `GET /groups`
 - `GET /groups/:id`
-- `DELETE /groups/:id` *(Terminates all group VMs, removes DB records, and deletes Grafana alert rule)*
+- `DELETE /groups/:id` _(Terminates all group VMs, removes DB records, and deletes Grafana alert rule)_
 
 **Request Body (`POST /groups`):**
 
@@ -383,7 +385,8 @@ Creating an autoscaling group immediately provisions `desiredSize` instances, ba
 }
 ```
 
-*Parameters:*
+_Parameters:_
+
 - `monitoringType`: `"cpu"` or `"memory"`.
 - `scalingAlgorithm`: `"simple"` (uses `scaleUpThreshold` and `scaleDownThreshold`).
 - `scaleUpThreshold` / `scaleDownThreshold`: Utilization percentages (1–100).
@@ -402,10 +405,10 @@ Creating an autoscaling group immediately provisions `desiredSize` instances, ba
 
 Base URL: `http://localhost:8085`
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/targets` | HTTP Service Discovery endpoint scraped by Grafana Alloy. Returns all managed instances with label `groupId`. |
-| `POST` | `/webhooks/grafana/alerts` | Webhook receiver invoked by Grafana Alerting. Evaluates alert state and executes `ScaleUp` or `ScaleOut`. |
+| Method | Endpoint                   | Description                                                                                                   |
+| :----- | :------------------------- | :------------------------------------------------------------------------------------------------------------ |
+| `GET`  | `/targets`                 | HTTP Service Discovery endpoint scraped by Grafana Alloy. Returns all managed instances with label `groupId`. |
+| `POST` | `/webhooks/grafana/alerts` | Webhook receiver invoked by Grafana Alerting. Evaluates alert state and executes `ScaleUp` or `ScaleOut`.     |
 
 ---
 
@@ -413,12 +416,12 @@ Base URL: `http://localhost:8085`
 
 Base URL: `http://localhost:8090`
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/services` | List available database templates from `packer-templates` (e.g. `["postgresql"]`). |
-| `GET` | `/services/:kind` | Get schema and configurable options for a service (e.g. `/services/postgresql`). |
-| `POST` | `/services` | Trigger a Temporal workflow to build and deploy a managed database. |
-| `GET` | `/services/monitoring/os/targets` | Scrape target endpoint for database OS metrics consumed by Alloy. |
+| Method | Endpoint                          | Description                                                                        |
+| :----- | :-------------------------------- | :--------------------------------------------------------------------------------- |
+| `GET`  | `/services`                       | List available database templates from `packer-templates` (e.g. `["postgresql"]`). |
+| `GET`  | `/services/:kind`                 | Get schema and configurable options for a service (e.g. `/services/postgresql`).   |
+| `POST` | `/services`                       | Trigger a Temporal workflow to build and deploy a managed database.                |
+| `GET`  | `/services/monitoring/os/targets` | Scrape target endpoint for database OS metrics consumed by Alloy.                  |
 
 **Request Body (`POST /services`):**
 
@@ -457,10 +460,13 @@ Base URL: `http://localhost:8090`
 Grafana alert rules are dynamically configured during group creation:
 
 - **CPU Monitoring**:
+
   ```promql
   avg(1 - rate(node_cpu_seconds_total{mode="idle", groupId="<GROUP_ID>"}[1m])) * 100
   ```
+
 - **Memory Monitoring**:
+
   ```promql
   (1 - (node_memory_MemAvailable_bytes{groupId="<GROUP_ID>"} / node_memory_MemTotal_bytes{groupId="<GROUP_ID>"})) * 100
   ```
@@ -483,14 +489,17 @@ docs/
 ```
 
 ### 1. Updated Architecture Infographic (`docs/images/architecture.png`)
+
 - **Current State**: The legacy image embedded in earlier versions showed a single monolithic Go server.
 - **What is needed**: An updated visual diagram illustrating the 3 distinct microservices (`api-server:8080`, `control-plane:8085`, `db-control-plane:8090`), the Temporal workflow engine, Packer image builds, and the Grafana/Alloy/Prometheus monitoring loop.
 
 ### 2. Live Grafana Dashboard Screenshot (`docs/images/grafana-dashboard.png`)
+
 - **What is needed**: A screenshot showing a Grafana dashboard displaying:
   - Average CPU and Memory utilization graphs grouped by `groupId`.
   - Configured scale-up and scale-down threshold threshold lines.
   - An active firing alert state transitioning into the webhook trigger.
 
 ### 3. Temporal Workflow Execution Screenshot (`docs/images/temporal-workflow.png`)
+
 - **What is needed**: A screenshot of the **Temporal Web UI** (`http://localhost:2000`) showing a completed `CreateServiceWorkflow` execution with its activity timeline (`checkImageExist` $\rightarrow$ `buildImage` $\rightarrow$ `deployDB`).
