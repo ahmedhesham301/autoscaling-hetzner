@@ -33,7 +33,7 @@ func InitGrafana() {
 
 	controllerPort, exists := os.LookupEnv("CONTROLLER_PORT")
 	if !exists {
-		slog.Error("env var is not set", "var", "CONTROLLER_HOST")
+		slog.Error("env var is not set", "var", "CONTROLLER_PORT")
 		os.Exit(1)
 	}
 
