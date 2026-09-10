@@ -2,6 +2,8 @@ github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910045351-ce98
 github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910045351-ce98b83bda30/go.mod h1:TZwEwfAY+BapwiFHL9/x2utXawpGV51ROpGl2woEWak=
 github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910072839-1c4b300eeee1 h1:p19l+g6XejFk4/WfEPeupLJBcSNwNC20gLvIBGpA8zA=
 github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910072839-1c4b300eeee1/go.mod h1:TZwEwfAY+BapwiFHL9/x2utXawpGV51ROpGl2woEWak=
+github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910074206-cb19ab75fb44 h1:7dpGf6NyD4i2d4f3CSg7F3jSi94rvpRu0apWomScy7Q=
+github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910074206-cb19ab75fb44/go.mod h1:TZwEwfAY+BapwiFHL9/x2utXawpGV51ROpGl2woEWak=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bytedance/sonic v1.14.0 h1:/OfKt8HFw0kh2rj8N0F6C/qPGRESq0BbaNZgcNXXzQQ=

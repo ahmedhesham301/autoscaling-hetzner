@@ -1,20 +1,46 @@
 services:
-  # server:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: server
-  #   restart: unless-stopped
-  #   ports:
-  #     - 8080:8080
-  #   env_file:
-  #     - .env.compose
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
+  api-server:
+    image: ahmedhesham301/hetzner-api-server
+    build:
+      context: api-server
+      dockerfile: Dockerfile
+    container_name: api-server
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    environment:
+      - DATABASE_HOST=db
+      - GRAFANA_HOST=grafana:3000
+      - CONTROLLER_HOST=control-plane
+      - CONTROLLER_PORT=8085
+    env_file:
+      - .env.compose
+    depends_on:
+      db:
+        condition: service_healthy
+
+  control-plane:
+    image: ahmedhesham301/hetzner-control-plane
+    build:
+      context: control-plane
+      dockerfile: Dockerfile
+    container_name: control-plane
+    restart: unless-stopped
+    ports:
+      - 8085:8085
+    environment:
+      - DATABASE_HOST=db
+    env_file:
+      - .env.compose
+    depends_on:
+      db:
+        condition: service_healthy
 
   db-control-plane:
     image: ahmedhesham301/hetzner-db-control-plane:latest
+    build:
+      context: db-control-plane
+      dockerfile: Dockerfile
     container_name: db-control-plane
     restart: unless-stopped
     ports:
