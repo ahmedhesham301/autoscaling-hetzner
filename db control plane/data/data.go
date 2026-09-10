@@ -18,6 +18,7 @@ type CreateDBParams struct {
 	FirewallID      *int64            `json:"firewall_id"`
 	NodeExporter    bool              `json:"node_exporter"`
 	ServiceExporter bool              `json:"service_exporter"`
+	NetworkID       *int64            `json:"network_id"`
 	ExtraLabels     map[string]string `json:"extra_labels"`
 }
 

@@ -77,6 +77,13 @@ func deployDB(ctx context.Context, params data.CreateDBParams, imageID int64, DB
 		ops.PublicNet.EnableIPv6 = true
 		ops.Firewalls = []*hcloud.ServerCreateFirewall{{Firewall: hcloud.Firewall{ID: *params.FirewallID}}}
 	}
+	if params.NetworkID != nil {
+		ops.Networks = []*hcloud.Network{
+			{
+				ID: *params.NetworkID,
+			},
+		}
+	}
 	server, _, err := hetzner.HClient.Server.Create(ctx, ops)
 
 	if err != nil {
