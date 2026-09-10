@@ -13,28 +13,28 @@ services:
   #     db:
   #       condition: service_healthy
 
-  # db-control-plane:
-  #   image: ahmedhesham301/hetzner-db-control-plane:latest
-  #   container_name: db-control-plane
-  #   restart: unless-stopped
-  #   ports:
-  #     - 8090:8090
-  #   environment:
-  #     - BUILD_TARGET=hetzner
-  #     - TEMPORAL_ADDRESS=temporal:7233
-  #     - DATABASE_HOST=db
-  #     - PACKER_TEMPLATES_PATH=/packer-templates
-  #   env_file:
-  #     - .env.compose
-  #   volumes:
-  #     - ./packer-templates:/packer-templates:ro
-  #   depends_on:
-  #     temporal:
-  #       condition: service_healthy
-  #     db:
-  #       condition: service_healthy
-  #     alloy:
-  #       condition: service_started
+  db-control-plane:
+    image: ahmedhesham301/hetzner-db-control-plane:latest
+    container_name: db-control-plane
+    restart: unless-stopped
+    ports:
+      - 8090:8090
+    environment:
+      - BUILD_TARGET=hetzner
+      - TEMPORAL_ADDRESS=temporal:7233
+      - DATABASE_HOST=db
+      - PACKER_TEMPLATES_PATH=/packer-templates
+    env_file:
+      - .env.compose
+    volumes:
+      - ./packer-templates:/packer-templates:ro
+    depends_on:
+      temporal:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      alloy:
+        condition: service_started
 
   db:
     image: postgres:18-alpine
