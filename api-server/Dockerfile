@@ -7,7 +7,7 @@ COPY . .
 RUN go mod download
 
 
-RUN go build -o api-server-bin api-server
+RUN go build -o api-server-bin ./api-server
 
 FROM alpine:3
 

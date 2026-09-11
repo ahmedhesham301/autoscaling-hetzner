@@ -6,7 +6,7 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o control-plane-bin control-plane
+RUN go build -o control-plane-bin ./control-plane
 
 FROM alpine:3
 

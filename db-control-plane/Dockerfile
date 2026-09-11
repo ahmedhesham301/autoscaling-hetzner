@@ -6,7 +6,7 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o db-control-plane-bin db-control-plane
+RUN go build -o db-control-plane-bin ./db-control-plane
 
 FROM ubuntu:resolute
 
