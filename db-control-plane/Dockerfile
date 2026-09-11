@@ -2,13 +2,11 @@ FROM golang:1.27-alpine AS build
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY . .
 
 RUN go mod download
 
-COPY . .
-
-RUN go build .
+RUN go build -o db-control-plane-bin db-control-plane
 
 FROM ubuntu:resolute
 
@@ -21,8 +19,8 @@ RUN packer plugins install github.com/hetznercloud/hcloud
 
 WORKDIR /app
 
-COPY --from=build /app/db-control-plane .
+COPY --from=build /app/db-control-plane-bin .
 
 EXPOSE 8090
 
-CMD [ "./db-control-plane" ]
+CMD [ "./db-control-plane-bin" ]

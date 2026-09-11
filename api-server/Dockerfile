@@ -2,20 +2,19 @@ FROM golang:1.27-alpine AS build
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY . .
 
 RUN go mod download
 
-COPY . .
 
-RUN go build .
+RUN go build -o api-server-bin api-server
 
 FROM alpine:3
 
 WORKDIR /app
 
-COPY --from=build /app/api-server .
+COPY --from=build /app/api-server-bin .
 
 EXPOSE 8080
 
-CMD [ "./api-server" ]
+CMD [ "./api-server-bin" ]

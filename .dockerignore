@@ -11,3 +11,7 @@ docker-compose.yaml
 Dockerfile
 README.md
 .env.compose
+packer-templates
+scripts
+.dockerignore
+README.md

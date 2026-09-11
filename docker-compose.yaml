@@ -2,8 +2,8 @@ services:
   api-server:
     image: ahmedhesham301/hetzner-api-server
     build:
-      context: api-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api-server/Dockerfile
     container_name: api-server
     restart: unless-stopped
     ports:
@@ -22,8 +22,8 @@ services:
   control-plane:
     image: ahmedhesham301/hetzner-control-plane
     build:
-      context: control-plane
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: control-plane/Dockerfile
     container_name: control-plane
     restart: unless-stopped
     ports:
@@ -39,8 +39,8 @@ services:
   db-control-plane:
     image: ahmedhesham301/hetzner-db-control-plane:latest
     build:
-      context: db-control-plane
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: db-control-plane/Dockerfile
     container_name: db-control-plane
     restart: unless-stopped
     ports:

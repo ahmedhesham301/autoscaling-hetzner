@@ -2,20 +2,18 @@ FROM golang:1.27-alpine AS build
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY . .
 
 RUN go mod download
 
-COPY . .
-
-RUN go build .
+RUN go build -o control-plane-bin control-plane
 
 FROM alpine:3
 
 WORKDIR /app
 
-COPY --from=build /app/control-plane .
+COPY --from=build /app/control-plane-bin .
 
 EXPOSE 8085
 
-CMD [ "./control-plane" ]
+CMD [ "./control-plane-bin" ]

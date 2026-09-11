@@ -27,7 +27,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7.3.0
         with:
-          context: "api-server"
+          context: "."
           file: "api-server/Dockerfile"
           push: true
           tags: ahmedhesham301/hetzner-api-server:latest

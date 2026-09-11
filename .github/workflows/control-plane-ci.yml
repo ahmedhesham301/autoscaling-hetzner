@@ -27,7 +27,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7.3.0
         with:
-          context: "control-plane"
+          context: "."
           file: "control-plane/Dockerfile"
           push: true
           tags: ahmedhesham301/hetzner-control-plane:latest
