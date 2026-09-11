@@ -1,6 +1,6 @@
 # Autoscaling Hetzner & Cloud Control Plane
 
-A modular, production-ready control plane for **Hetzner Cloud** that combines automated virtual machine autoscaling, cloud resource orchestration, and a **Database-as-a-Service (DBaaS)** provisioning pipeline.
+An experimental, modular control plane for **Hetzner Cloud** that combines automated virtual machine autoscaling, cloud resource orchestration, and a **Database-as-a-Service (DBaaS)** provisioning pipeline.
 
 ---
 
@@ -18,23 +18,24 @@ A modular, production-ready control plane for **Hetzner Cloud** that combines au
   - [Environment Modes (`prod` vs `dev`)](#environment-modes-prod-vs-dev)
   - [Configuration File (`.env.compose`)](#configuration-file-envcompose)
 - [Quick Start Guide](#quick-start-guide)
-- [Complete REST API Reference](#complete-rest-api-reference)
+- [REST API Reference](#rest-api-reference)
   - [API Server (Port 8080)](#api-server-port-8080)
   - [Control Plane (Port 8085)](#control-plane-port-8085)
   - [Database Control Plane (Port 8090)](#database-control-plane-port-8090)
 - [Autoscaling & Balancing Mechanics](#autoscaling--balancing-mechanics)
-- [Recommended Pictures & Diagrams](#recommended-pictures--diagrams)
+- [Current Limitations](#current-limitations)
+- [Development Checks](#development-checks)
 
 ---
 
 ## Overview
 
-Managing scalable infrastructure on Hetzner Cloud often requires bridging the gap between raw compute instances and enterprise autoscaling primitives. This project provides:
+This repository implements VM autoscaling and a single-node PostgreSQL provisioning pipeline. The current capabilities are:
 
 1. **Horizontal VM Autoscaling**: Dynamically scales servers up or down across multiple Hetzner datacenters based on real-time CPU and Memory telemetry from Prometheus and Grafana alerts.
-2. **Balanced Multi-Datacenter Distribution**: Automatically balances server placement across selected datacenter locations during scale-up and prioritizes densely populated locations during scale-out.
-3. **Database-as-a-Service (DBaaS)**: Uses **Temporal** durable execution workflows and **HashiCorp Packer** to bake custom, production-hardened OS images (e.g. PostgreSQL with Patroni HA and etcd) and deploy them on-demand.
-4. **End-to-End Observability**: Auto-provisions Grafana data sources, contact points, and alert rules upon autoscaling group creation, backed by **Grafana Alloy** dynamic HTTP service discovery.
+2. **Balanced Multi-Datacenter Distribution**: Automatically balances server placement across selected datacenter locations during scale-up and prioritizes densely populated locations during scale-down.
+3. **Database-as-a-Service (DBaaS)**: Uses **Temporal** workflows and **HashiCorp Packer** to build OS images containing PostgreSQL, Patroni, and local etcd, then deploy them on demand.
+4. **End-to-End Observability**: Provisions a Prometheus datasource through Compose, initializes Grafana contact points at API startup, and creates alert rules during group creation, backed by **Grafana Alloy** dynamic HTTP service discovery.
 
 ---
 
@@ -50,7 +51,7 @@ The system is decoupled into three primary microservices, a shared Go module lib
 - **`control-plane`** (Port `8085`):
   - The autoscaling decision and actuation engine.
   - Exposes `/targets` for dynamic HTTP service discovery consumed by Grafana Alloy.
-  - Receives Grafana Alerting webhooks at `/webhooks/grafana/alerts` and executes balanced scale-up or scale-out actions against Hetzner Cloud.
+  - Receives Grafana Alerting webhooks at `/webhooks/grafana/alerts` and executes balanced scale-up or scale-down actions against Hetzner Cloud.
 - **`db-control-plane`** (Port `8090`):
   - Database and managed service control plane.
   - Coordinates with a **Temporal** workflow engine to orchestrate image verification, automated Packer image baking (Hetzner snapshots), firewall configuration, and VM deployment.
@@ -72,9 +73,8 @@ flowchart TB
         DBControlPlane["DB Control Plane\n:8090\n(DBaaS & Temporal Worker)"]
     end
 
-    subgraph DataStore["State & Secrets"]
+    subgraph DataStore["Application State"]
         Postgres[("PostgreSQL\n:5432\n(App Metadata)")]
-        Vault["HashiCorp Vault\n:8200"]
     end
 
     subgraph WorkflowEngine["Durable Execution"]
@@ -122,7 +122,7 @@ flowchart TB
 
     Grafana -->|Evaluate PromQL Queries| Prometheus
     Grafana -->|Webhook Alert Trigger| ControlPlane
-    ControlPlane -->|Scale Up / Scale Out| HetznerAPI
+    ControlPlane -->|Scale Up / Scale Down| HetznerAPI
 ```
 
 ---
@@ -152,7 +152,7 @@ sequenceDiagram
     end
 
     loop Alert Evaluation
-        Grafana->>Prom: Query PromQL (avg CPU / Memory)
+        Grafana->>Prom: Query PromQL (group CPU / per-instance memory)
         Note over Grafana: If load exceeds scale-up threshold<br/>or drops below scale-down threshold for 3m
         Grafana->>CP: POST /webhooks/grafana/alerts
     end
@@ -161,7 +161,7 @@ sequenceDiagram
         CP->>DB: Query current group servers & distribution
         CP->>Hetzner: Create VM in least-populated location
         CP->>DB: Save new server & increment desired_size
-    else Scale Out Triggered
+    else Scale Down Triggered
         CP->>DB: Find location with most servers
         CP->>Hetzner: Terminate server instance
         CP->>DB: Delete server record & decrement desired_size
@@ -170,7 +170,7 @@ sequenceDiagram
 
 ### 2. Managed Database Provisioning Pipeline
 
-Database provisioning is executed as a fault-tolerant **Temporal Workflow** (`CreateServiceWorkflow`):
+Database provisioning runs through **Temporal Workflow** `CreateServiceWorkflow`. Activities can retry, but resource creation is not yet idempotent; retries after partial failures can create duplicate resources.
 
 ```mermaid
 sequenceDiagram
@@ -183,14 +183,14 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     Client->>DBCP: POST /services {app_name: "postgresql", app_version: "18", ...}
-    DBCP->>DB: Create initial database record (Status Pending)
+    DBCP->>DB: Create initial database record (kind only)
     DBCP->>Temporal: Execute CreateServiceWorkflow
     DBCP-->>Client: 202 Accepted {id: <DB_ID>}
 
     Temporal->>Hetzner: Activity: Check if snapshot image exists for config
     alt Snapshot does not exist
         Temporal->>Packer: Activity: Build image with Packer (Hetzner hcloud builder)
-        Note over Packer: Installs PostgreSQL, Patroni, etcd, and node-exporter
+        Note over Packer: Installs PostgreSQL, Patroni, etcd, and optional node-exporter
         Packer->>Hetzner: Create snapshot image
         Hetzner-->>Temporal: Return new Snapshot Image ID
     end
@@ -200,7 +200,7 @@ sequenceDiagram
     end
 
     Temporal->>Hetzner: Activity: Create server with snapshot image
-    Hetzner-->>Temporal: Server provisioned with IP & Credentials
+    Hetzner-->>Temporal: Server creation response with IP and metadata
     Temporal->>DB: Activity: Update database record with server details
 ```
 
@@ -219,7 +219,7 @@ sequenceDiagram
 | **`temporal`**         | `7233`         | `7233`    | Temporal gRPC workflow server                        | `localhost:7233`                            |
 | **`temporal-ui`**      | `8080`         | `2000`    | Temporal Web UI for monitoring workflows             | `http://localhost:2000`                     |
 | **`alloy`**            | `12345`        | `12345`   | Grafana Alloy metrics collector & scraper            | `http://localhost:12345`                    |
-| **`vault`**            | `8200`         | `8200`    | HashiCorp Vault for secrets management               | `http://localhost:8200`                     |
+| **`vault`**            | `8200`         | `8200`    | Included in Compose; not integrated with the application | `http://localhost:8200`                     |
 
 ---
 
@@ -227,18 +227,20 @@ sequenceDiagram
 
 - **Docker** and **Docker Compose** installed.
 - A valid **Hetzner Cloud API Token** (`HKEY`) with read/write permissions.
-- Outbound internet connectivity to reach `api.hetzner.cloud`.
+- Outbound connectivity for Hetzner, container registries, and image-build package downloads.
+- Capacity and quota for billable VMs and snapshots, including temporary Packer build VMs.
 
 ### Environment Modes (`prod` vs `dev`)
 
 The system supports two execution environments configured via the `ENV` variable:
 
-| Feature                   | `ENV=prod` (Recommended for Hetzner)                             | `ENV=dev` (Local Testing)                                   |
+| Feature | `ENV=prod` (Private-network mode) | `ENV=dev` (Local Testing) |
 | :------------------------ | :--------------------------------------------------------------- | :---------------------------------------------------------- |
-| **Scraping Target IP**    | Uses Hetzner private network IP (`res.Server.PrivateNet[0].IP`). | Uses public IPv4 (`res.Server.PublicNet.IPv4.IP`).          |
-| **Network Requirements**  | Control plane must be inside the same Hetzner private network.   | Control plane can run locally or outside Hetzner.           |
-| **Template Public IPs**   | Optional; instances can operate purely on private networks.      | `publicIPv4` must be enabled.                               |
-| **Firewall Provisioning** | Uses firewalls specified in templates.                           | Automatically creates and attaches an `allow_all` firewall. |
+| **Scraping Target IP** | Uses Hetzner private network IP (`res.Server.PrivateNet[0].IP`). | Uses public IPv4 (`res.Server.PublicNet.IPv4.IP`). |
+| **Network Requirements** | Alloy must have connectivity to the VMs' private network. | Alloy must be able to reach the VMs' public IPv4 addresses. |
+| **Template Public IPs** | Optional; instances can operate purely on private networks. | `publicIPv4` must be enabled. |
+| **Group Firewalls** | Uses template `firewalls`. | Uses template `firewalls`; no automatic firewall is added. |
+| **Database Firewalls** | Request `firewall_id` is currently ignored. | Creates/reuses `allow_all` for all IPv4 TCP traffic and forces public IPv4/IPv6 on. |
 
 ### Configuration File (`.env.compose`)
 
@@ -251,11 +253,14 @@ HKEY=your_hetzner_api_token_here
 # Deployment mode: 'prod' or 'dev'
 ENV=dev
 
-# Optional Hetzner Private Network ID (required if using private networks)
-networkID=12345678
+# Optional private network for the temporary Packer build VM.
+# Omit this line unless using an existing network.
+# networkID=12345678
 ```
 
-The Docker Compose setup maps database hosts and internal networking automatically:
+The `networkID` environment variable configures the Packer build VM. It does not attach deployed databases to that network: use `network_id` in the database request, or `networks` in a group template. In private-network mode, deployed VMs must have a private network and Alloy must be able to reach it. Only the exact value `ENV=dev` selects public-IP discovery.
+
+Docker Compose supplies these service settings:
 
 - `DATABASE_HOST=db`
 - `GRAFANA_HOST=grafana:3000`
@@ -278,11 +283,11 @@ cd autoscaling-hetzner
 
 ### 2. Configure Environment
 
-```bash
-cp .env.compose.example .env.compose # or edit directly
-```
+Create `.env.compose` using the example above and replace the `HKEY` placeholder. There is currently no root `.env.compose.example` file.
 
-Ensure your `HKEY` is set in `.env.compose`.
+The APIs have no authentication and Compose publishes ports on all host interfaces. Use an isolated development environment; restrict published ports before starting the stack. Database images also contain a shared password (see [Current Limitations](#current-limitations)).
+
+Alloy currently uses `172.17.0.1` to reach the host. For communication within this Compose stack, change the discovery URL in `configs/alloy/main.alloy` to `http://control-plane:8085/targets` and set Alloy’s `DB_CONTROL_PLANE_HOST` in `docker-compose.yaml` to `db-control-plane`. The `DATABASE_OS_TARGETS` environment variable is unused.
 
 ### 3. Launch All Services
 
@@ -294,15 +299,26 @@ docker compose up -d --build
 
 When Docker Compose starts:
 
-1. PostgreSQL initializes tables using `configs/schema.sql`.
+1. PostgreSQL initializes tables using `configs/schema.sql` when its data directory is empty. This is not a migration mechanism for existing databases.
 2. `temporal-postgresql` starts and `temporal-admin-tools` executes `scripts/temporal/setup-postgres.sh` to initialize schemas.
 3. `temporal-create-namespace` runs `scripts/temporal/create-namespace.sh` to ensure the `default` namespace is ready.
-4. `api-server` automatically verifies database connectivity, sets up the Grafana Prometheus datasource, ensures the `alerts` folder exists, and registers the `server` webhook contact point.
-5. Grafana Alloy begins polling `/targets` and `/services/monitoring/os/targets`.
+4. Grafana loads the Prometheus datasource from `configs/grafana/datasource.yaml`. The API verifies database connectivity, reads the first Grafana datasource, initializes an alert folder, and registers the `server` webhook contact point if absent.
+5. Grafana Alloy polls `/targets` and `/services/monitoring/os/targets` and scrapes discovered node exporters every 30 seconds.
+
+Compose does not currently wait for Grafana readiness before starting the API, or namespace creation before starting the database worker. Check startup logs before submitting requests:
+
+```bash
+docker compose ps -a
+docker compose logs --tail=100 api-server db-control-plane temporal-create-namespace
+curl --fail http://localhost:8080/templates
+curl --fail http://localhost:8090/services
+```
+
+Confirm namespace initialization completed successfully in its logs. These GET requests check API reachability; they do not validate provisioning or database readiness.
 
 ---
 
-## Complete REST API Reference
+## REST API Reference
 
 ### API Server (Port 8080)
 
@@ -337,7 +353,7 @@ Base URL: `http://localhost:8080`
 
 #### 3. Server Templates
 
-Templates define how servers inside an autoscaling group are provisioned.
+Templates define how servers inside an autoscaling group are provisioned. Replace all resource IDs in the examples with IDs from your Hetzner project. Install and enable node exporter in the image or cloud config, and allow Alloy to reach TCP port 9100.
 
 - `POST /templates`
 - `GET /templates`
@@ -359,7 +375,9 @@ Templates define how servers inside an autoscaling group are provisioned.
 
 #### 4. Autoscaling Groups
 
-Creating an autoscaling group immediately provisions `desiredSize` instances, balances them across `locations`, saves them to the database, and registers a Grafana Alert Rule.
+Group creation synchronously saves the group, attempts to provision `desiredSize` instances across `locations`, saves the servers, and registers a Grafana alert rule. Success returns HTTP 200 with no response body; use `GET /groups` to retrieve the group. Partial failures are not rolled back.
+
+Currently, `desiredSize >= maxSize` returns without provisioning any instances or alert rule. Use positive sizes with `minSize <= desiredSize < maxSize` until this bug is fixed.
 
 - `POST /groups`
 - `GET /groups`
@@ -389,15 +407,19 @@ _Parameters:_
 
 - `monitoringType`: `"cpu"` or `"memory"`.
 - `scalingAlgorithm`: `"simple"` (uses `scaleUpThreshold` and `scaleDownThreshold`).
-- `scaleUpThreshold` / `scaleDownThreshold`: Utilization percentages (1–100).
-- `locations`: Array of Hetzner location IDs to balance across.
+- `scaleUpThreshold` / `scaleDownThreshold`: Utilization percentages (1–100), with the lower threshold strictly below the upper threshold.
+- `locations`: A nonempty array of Hetzner location IDs to balance across.
+- `zone`: Required and stored, but not used to enforce placement.
+- `scalingAlgorithm="target"`: Accepted by the SQL enum but not implemented by alert setup or the webhook handler; use `"simple"`.
 
 #### 5. Standalone Servers
 
 - `GET /servers`: List all servers.
 - `GET /servers/:id`: Get server details.
 - `POST /servers`: Create a standalone server.
-- `DELETE /servers/:id`: Delete a standalone server.
+- `DELETE /servers/:id`: Delete a server directly in Hetzner.
+
+These endpoints operate on project servers, including group-managed servers. Direct deletion does not update group metadata or desired size. Use group operations for managed resources.
 
 ---
 
@@ -407,7 +429,7 @@ Base URL: `http://localhost:8085`
 
 | Method | Endpoint                   | Description                                                                                                   |
 | :----- | :------------------------- | :------------------------------------------------------------------------------------------------------------ |
-| `GET`  | `/targets`                 | HTTP Service Discovery endpoint scraped by Grafana Alloy. Returns all managed instances with label `groupId`. |
+| `GET`  | `/targets`                 | HTTP Service Discovery endpoint scraped by Grafana Alloy. Returns recorded autoscaling-group instances with label `groupId`. |
 | `POST` | `/webhooks/grafana/alerts` | Webhook receiver invoked by Grafana Alerting. Evaluates alert state and executes `ScaleUp` or `ScaleOut`.     |
 
 ---
@@ -434,13 +456,18 @@ Base URL: `http://localhost:8090`
   "public_ipv4": true,
   "public_ipv6": true,
   "node_exporter": true,
-  "service_exporter": true,
-  "network_id": 12633796,
-  "extra_labels": {
-    "environment": "production"
-  }
+  "service_exporter": false,
+  "network_id": 12633796
 }
 ```
+
+A successful submission returns HTTP 202 with `{"id": <database-record-id>}`. Track execution in Temporal UI using workflow ID `create-database-workflow<ID>`. Acceptance does not mean the database is ready: the workflow stores VM metadata without checking PostgreSQL health. There is no service-instance listing, status, deletion, or credential-retrieval endpoint; `GET /services` lists templates only.
+
+- `network_id` attaches the deployed VM to an existing network. It is required for private-IP discovery outside `ENV=dev`; it can be omitted for public-IP development deployments.
+- `node_exporter` controls node exporter installation and OS target discovery.
+- `service_exporter` is used in image labels and stored in metadata, but no database exporter is installed or scraped.
+- `extra_labels` is accepted but unused.
+- `firewall_id` is accepted but ignored outside development mode; development mode replaces it with the `allow_all` firewall.
 
 ---
 
@@ -449,11 +476,11 @@ Base URL: `http://localhost:8090`
 ### Multi-Datacenter Balancing
 
 - **Scale Up Placement (`whereToScaleUp`)**:
-  1. Checks if any location in `group.Locations` has zero running instances; if found, places the new VM there.
-  2. Otherwise, identifies the location with the minimum number of active servers and schedules the instance there.
-- **Scale Out Placement (`ScaleOut`)**:
+  1. Checks if any location in `group.Locations` has zero recorded instances; if found, places the new VM there.
+  2. Otherwise, identifies the location with the minimum number of recorded servers and schedules the instance there.
+- **Scale Down Placement (`ScaleOut` in code)**:
   1. Queries all servers across locations.
-  2. Identifies the location with the highest instance count and terminates the oldest server in that location, maintaining parity across datacenters.
+  2. Identifies the location with the highest recorded instance count and terminates the first returned server in that location. The SQL query has no ordering, so oldest-first deletion is not guaranteed.
 
 ### PromQL Alert Expressions
 
@@ -471,35 +498,30 @@ Grafana alert rules are dynamically configured during group creation:
   (1 - (node_memory_MemAvailable_bytes{groupId="<GROUP_ID>"} / node_memory_MemTotal_bytes{groupId="<GROUP_ID>"})) * 100
   ```
 
-Alert rules evaluate every **3 minutes** (`For: 3m`, `RepeatInterval: 3m`) to prevent flapping.
+Rules use a **3-minute pending period** (`For: 3m`) and a **3-minute repeat notification interval** (`RepeatInterval: 3m`). These settings do not set the evaluation frequency; that is controlled by Grafana’s evaluation group. There is no separate controller cooldown or webhook deduplication. The CPU expression aggregates across the group, while the memory expression returns per-instance series.
 
 ---
 
-## Recommended Pictures & Diagrams
+## Current Limitations
 
-To make this documentation visually complete, the following diagrams and screenshots should be placed in a `docs/images/` directory:
+- **Access and credentials:** API routes and scaling webhooks have no authentication or resource ownership checks. The metadata database uses `postgres` / `1234`, Grafana client authentication uses `admin` / `admin`, and baked PostgreSQL instances use `master` / `1234`. Patroni listens on port 8008 without configured authentication. Restrict network access and replace these defaults before using sensitive data. Changing container credentials alone is insufficient because application clients also hardcode them. Vault is included in Compose but is not integrated.
+- **State and recovery:** Compose does not configure named data volumes for PostgreSQL, Temporal PostgreSQL, or Grafana. Configure persistent storage and backups before relying on their state across teardown/recreation. Cloud creation/deletion and metadata updates are not atomic, and there is no general reconciliation or rollback mechanism. Inspect Hetzner resources after failures to identify orphaned VMs and snapshots. Stopping Compose does not delete cloud resources.
+- **Scaling correctness:** Concurrent or repeated alerts can exceed capacity limits or leave incorrect counts. Missing webhook metric `B0` is interpreted as zero and can trigger scale-down. Private-IP selection assumes at least one private network; invalid configurations can panic after VM creation.
+- **Database capabilities:** The template deploys one PostgreSQL node with local etcd; multi-node HA, backups, credential generation, and database readiness checks are not implemented. Use version `18`: although template metadata lists other versions, Patroni’s binary directory is fixed to PostgreSQL 18.
+- **Startup:** The Temporal worker starts before its database and cloud clients are initialized. Namespace retries also contain a `MAX_ATTdMPTS` typo in `scripts/temporal/create-namespace.sh`, which aborts that retry path under `set -u`.
 
+---
+
+## Development Checks
+
+The Go workspace includes `api-server`, `control-plane`, `db-control-plane`, and `modules`, and currently declares Go `1.27.1`. From the repository root:
+
+```bash
+go test ./api-server/... ./control-plane/... ./db-control-plane/... ./modules/...
+go vet ./api-server/... ./control-plane/... ./db-control-plane/... ./modules/...
+docker compose config --quiet
+bash -n packer-templates/postgresql/install.sh packer-templates/postgresql/cleanup.sh
+sh -n scripts/temporal/setup-postgres.sh scripts/temporal/create-namespace.sh
 ```
-docs/
-└── images/
-    ├── architecture.png        <-- High-level system infographic
-    ├── autoscaling-flow.png    <-- Visual workflow diagram
-    ├── grafana-dashboard.png   <-- Screenshot of Grafana autoscaling dashboard
-    └── temporal-workflow.png   <-- Screenshot of Temporal UI execution
-```
 
-### 1. Updated Architecture Infographic (`docs/images/architecture.png`)
-
-- **Current State**: The legacy image embedded in earlier versions showed a single monolithic Go server.
-- **What is needed**: An updated visual diagram illustrating the 3 distinct microservices (`api-server:8080`, `control-plane:8085`, `db-control-plane:8090`), the Temporal workflow engine, Packer image builds, and the Grafana/Alloy/Prometheus monitoring loop.
-
-### 2. Live Grafana Dashboard Screenshot (`docs/images/grafana-dashboard.png`)
-
-- **What is needed**: A screenshot showing a Grafana dashboard displaying:
-  - Average CPU and Memory utilization graphs grouped by `groupId`.
-  - Configured scale-up and scale-down threshold threshold lines.
-  - An active firing alert state transitioning into the webhook trigger.
-
-### 3. Temporal Workflow Execution Screenshot (`docs/images/temporal-workflow.png`)
-
-- **What is needed**: A screenshot of the **Temporal Web UI** (`http://localhost:2000`) showing a completed `CreateServiceWorkflow` execution with its activity timeline (`checkImageExist` $\rightarrow$ `buildImage` $\rightarrow$ `deployDB`).
+Compose validation requires `.env.compose`. There are currently no Go test files, so `go test` checks package compilation but provides no behavioral coverage. These checks do not create cloud resources or prove that the full provisioning pipeline works. CI image workflows currently build and publish images and then scan them; they do not run a Go test suite.
