@@ -1,6 +1,6 @@
 module github.com/ahmedhesham301/autoscaling-hetzner/control-plane
 
-go 1.26.5
+go 1.27.1
 
 require (
 	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910074206-cb19ab75fb44
