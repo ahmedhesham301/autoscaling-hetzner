@@ -12,9 +12,9 @@ import (
 func main() {
 	config.ValidateEnvVars([]string{"BUILD_TARGET", "ENV", "PACKER_TEMPLATES_PATH"})
 	temporal.SetupClient()
-	go temporal.StartWorker()
 	database.InitDB()
 	hetzner.SetupClient()
+	go temporal.StartWorker()
 
 	server := gin.Default()
 	server.POST("/services", controller.CreateService)
