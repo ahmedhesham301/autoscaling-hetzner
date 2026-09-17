@@ -14,7 +14,7 @@ func StartWorker() {
 	w.RegisterWorkflow(CreateServiceWorkflow)
 	w.RegisterActivity(checkImageExist)
 	w.RegisterActivity(buildImage)
-	w.RegisterActivity(deployDB)
+	w.RegisterActivity(deployService)
 	w.RegisterActivity(GetOrCreateAllowAllFirewall)
 	err := w.Run(nil)
 	if err != nil {

@@ -1,9 +1,9 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
-set -eux
+set -euxo pipefail
 
 # Enable automatic service startup
-rm /usr/sbin/policy-rc.d
+rm -f /usr/sbin/policy-rc.d
 
 # Clean and reset could-init files
 cloud-init clean --logs --machine-id --seed --configs all

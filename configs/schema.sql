@@ -56,16 +56,17 @@ CREATE TABLE servers(
 );
 CREATE INDEX ON servers(group_id);
 
-CREATE TABLE databases(
+CREATE TABLE services(
     id SERIAL PRIMARY KEY,
     server_name VARCHAR,
     server_id BIGINT,
-    kind VARCHAR NOT NULL,
+    type VARCHAR NOT NULL,
     location VARCHAR,
+    firewalls_ids BIGINT[],
     private_ip INET,
     node_exporter BOOLEAN,
     service_exporter BOOLEAN
 );
-CREATE INDEX ON databases(node_exporter);
-CREATE INDEX ON databases(service_exporter);
+CREATE INDEX ON services(node_exporter);
+CREATE INDEX ON services(service_exporter);
 

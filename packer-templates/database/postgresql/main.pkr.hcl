@@ -31,20 +31,21 @@ variable "env" {
 variable "networkID" {
   type      = number
   sensitive = false
-  default   = null
 }
 
 variable "config" {
   type = object({
-    app_name         = string
-    app_version      = string
+    type             = string
+    engine           = string
+    version          = string
     node_exporter    = bool
     service_exporter = bool
   })
 
   default = {
-    app_name         = "postgresql"
-    app_version      = "18"
+    type             = "database"
+    engine           = "postgresql"
+    version          = "18"
     node_exporter    = false
     service_exporter = true
   }
@@ -52,16 +53,14 @@ variable "config" {
 
 
 source "hcloud" "postgresql" {
-  token                = var.hcloud_token
-  image                = "debian-13"
-  user_data            = file("cloud-init-default.yml")
-  location             = "nbg1"
-  server_type          = "cx23"
-  ssh_username         = "root"
-  snapshot_labels      = var.config
-  networks = var.networkID != null ? [var.networkID] : []
-  # public_ipv4_disabled = var.env != "dev" ? true : false
-  # public_ipv6_disabled = var.env != "dev" ? true : false
+  token           = var.hcloud_token
+  image           = "debian-13"
+  user_data       = file("${path.root}/../../common/cloud-init/cloud-init-default.yml")
+  location        = "nbg1"
+  server_type     = "cx23"
+  ssh_username    = "root"
+  snapshot_labels = var.config
+  networks        = var.networkID != null ? [var.networkID] : []
 }
 
 source "vagrant" "postgresql" {
@@ -76,16 +75,33 @@ source "vagrant" "postgresql" {
 build {
   sources = var.build_target == "hetzner" ? ["source.hcloud.postgresql"] : ["source.vagrant.postgresql"]
 
+  provisioner "shell" {
+    script          = "${path.root}/../../common/scripts/update-upgrade.sh"
+    execute_command = "chmod +x {{ .Path }}; sudo env {{ .Vars }} {{ .Path }}"
+  }
+
+  provisioner "shell" {
+    script          = "${path.root}/../../common/scripts/disable-service-autostart.sh"
+    execute_command = "chmod +x {{ .Path }}; sudo env {{ .Vars }} {{ .Path }}"
+  }
+
+  provisioner "shell" {
+    script          = "${path.root}/../../common/scripts/install-node-exporter.sh"
+    execute_command = var.config["node_exporter"] ? "chmod +x {{ .Path }}; sudo env {{ .Vars }} {{ .Path }}" : "true"
+  }
+
   provisioner "file" {
     source      = "${path.root}/patroni-config.yml"
     destination = "/tmp/patroni-config.yml"
   }
+
   provisioner "shell" {
     script          = "${path.root}/install.sh"
-    execute_command = "chmod +x {{ .Path }}; sudo env {{ .Vars }} {{ .Path }} ${var.config["app_version"]} ${var.config["node_exporter"]}"
+    execute_command = "chmod +x {{ .Path }}; sudo env {{ .Vars }} {{ .Path }} ${var.config["version"]}"
   }
+
   provisioner "shell" {
-    script          = "${path.root}/cleanup.sh"
+    script          = "${path.root}/../../common/scripts/cleanup.sh"
     execute_command = "chmod +x {{ .Path }}; sudo env {{ .Vars }} {{ .Path }}"
   }
 }

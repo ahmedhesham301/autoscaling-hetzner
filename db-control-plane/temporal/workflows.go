@@ -7,7 +7,14 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func CreateServiceWorkflow(ctx workflow.Context, params data.CreateDBParams, DB_ID int, env string, templatesPath string, networkID *int64) error {
+type CreateServiceWorkflowParams struct {
+	ServiceParams data.CreateServiceParams
+	Env           string
+	TemplatesPath string
+	NetworkID     int64
+}
+
+func CreateServiceWorkflow(ctx workflow.Context, params CreateServiceWorkflowParams) error {
 	activityOptions := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute * 15,
 	}
@@ -17,29 +24,44 @@ func CreateServiceWorkflow(ctx workflow.Context, params data.CreateDBParams, DB_
 
 	// Check if image exists
 	var imageID *int64
-	err := workflow.ExecuteActivity(ctx, checkImageExist, params).Get(ctx, &imageID)
+	err := workflow.ExecuteActivity(ctx, checkImageExist, params.ServiceParams).Get(ctx, &imageID)
 	if err != nil {
 		logger.Error("error checking if image exists", "err", err)
 		return err
 	}
 	// If not build it
 	if imageID == nil {
-		err := workflow.ExecuteActivity(ctx, buildImage, params, env, templatesPath, networkID).Get(ctx, &imageID)
+		imageParams := buildImageParams{
+			serviceParams: params.ServiceParams,
+			env:           params.Env,
+			templatesPath: params.TemplatesPath,
+			networkID:     params.NetworkID,
+		}
+		err := workflow.ExecuteActivity(ctx, buildImage, imageParams).Get(ctx, &imageID)
 		if err != nil {
 			logger.Error("error building image", "err", err)
 			return err
 		}
 	}
 	// create a firewall that allows traffic if env is dev
-	if env == "dev" {
-		err = workflow.ExecuteActivity(ctx, GetOrCreateAllowAllFirewall).Get(ctx, &params.FirewallID)
+	var allowAllFirewallID *int64
+	if params.Env == "dev" {
+		err = workflow.ExecuteActivity(ctx, GetOrCreateAllowAllFirewall).Get(ctx, &allowAllFirewallID)
 		if err != nil {
 			logger.Error("error building image", "err", err)
 			return err
 		}
 	}
+
 	// Deploy it
-	err = workflow.ExecuteActivity(ctx, deployDB, params, imageID, DB_ID).Get(ctx, nil)
+	deployParams := deployServiceParams{
+		serviceParams:      params.ServiceParams,
+		imageID:            *imageID,
+		env:                params.Env,
+		allowAllFirewallID: allowAllFirewallID,
+		networkID:          params.NetworkID,
+	}
+	err = workflow.ExecuteActivity(ctx, deployService, deployParams).Get(ctx, nil)
 	if err != nil {
 		logger.Error("error building image", "err", err)
 		return err

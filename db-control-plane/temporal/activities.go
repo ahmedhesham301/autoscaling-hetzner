@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"os/exec"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/model"
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/utils"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/random"
@@ -17,13 +15,11 @@ import (
 	"go.temporal.io/sdk/activity"
 )
 
-func checkImageExist(ctx context.Context, params data.CreateDBParams) (*int64, error) {
+func checkImageExist(ctx context.Context, params data.CreateServiceParams) (*int64, error) {
 	images, err := hetzner.HClient.Image.AllWithOpts(ctx, hcloud.ImageListOpts{
-		ListOpts: hcloud.ListOpts{
-			LabelSelector: services.ConvertToHetznerLabels(
-				params.GetConfigMap(),
-			),
-		},
+		LabelSelector: services.ConvertToHetznerLabels(
+			params.GetConfigMap(),
+		),
 	})
 
 	if err != nil {
@@ -36,16 +32,22 @@ func checkImageExist(ctx context.Context, params data.CreateDBParams) (*int64, e
 
 }
 
-func buildImage(ctx context.Context, params data.CreateDBParams, env string, templatesPath string, networkID *int64) (*int64, error) {
+type buildImageParams struct {
+	serviceParams data.CreateServiceParams
+	env           string
+	templatesPath string
+	networkID     int64
+}
+
+func buildImage(ctx context.Context, params buildImageParams) (*int64, error) {
 	args := []string{
 		"build", "-machine-readable",
-		"-var", fmt.Sprintf("config=%v", utils.ConvertMapToJsonString(params.GetConfigMap())),
-		"-var", fmt.Sprintf("env=%v", env),
+		"-var", fmt.Sprintf("config=%v", utils.ConvertMapToJsonString(params.serviceParams.GetConfigMap())),
+		"-var", fmt.Sprintf("env=%v", params.env),
+		"-var", fmt.Sprintf("networkID=%v", params.networkID),
 	}
-	if networkID != nil {
-		args = append(args, "-var", fmt.Sprintf("networkID=%v", *networkID))
-	}
-	args = append(args, templatesPath+"/"+params.AppName+"/main.pkr.hcl")
+
+	args = append(args, params.templatesPath+"/"+params.serviceParams.ServiceType+"/"+params.serviceParams.Engine+"/main.pkr.hcl")
 
 	logger := activity.GetLogger(ctx)
 	cmd := exec.CommandContext(ctx, "packer", args...)
@@ -60,27 +62,50 @@ func buildImage(ctx context.Context, params data.CreateDBParams, env string, tem
 	return &id, err
 }
 
-func deployDB(ctx context.Context, params data.CreateDBParams, imageID int64, DB_ID int) error {
-	env := os.Getenv("ENV")
+type deployServiceParams struct {
+	serviceParams      data.CreateServiceParams
+	imageID            int64
+	env                string
+	allowAllFirewallID *int64
+	networkID          int64
+}
 
+func deployService(ctx context.Context, params deployServiceParams) error {
 	ops := hcloud.ServerCreateOpts{
-		Name:       random.AddRandomLetters(params.AppName + "-" + params.AppVersion),
-		ServerType: &hcloud.ServerType{Name: params.ServerType},
-		Image:      &hcloud.Image{ID: imageID},
-		Location:   &hcloud.Location{Name: params.Location},
-		PublicNet:  &hcloud.ServerCreatePublicNet{EnableIPv4: params.PublicIPv4, EnableIPv6: params.PublicIPv6},
-		Labels:     services.AppendManagedLabel(params.GetConfigMapString()),
+		Name:       random.AddRandomLetters(params.serviceParams.Engine + "-" + params.serviceParams.Version),
+		ServerType: &hcloud.ServerType{Name: params.serviceParams.ServerType},
+		Image:      &hcloud.Image{ID: params.imageID},
+		Location:   &hcloud.Location{Name: params.serviceParams.Location},
+		PublicNet: &hcloud.ServerCreatePublicNet{
+			EnableIPv4: params.serviceParams.Network.PublicIPv4,
+			EnableIPv6: params.serviceParams.Network.PublicIPv6,
+		},
+		Labels: services.AppendManagedLabel(params.serviceParams.GetConfigMapString()),
+	}
+	var firewalls []*hcloud.ServerCreateFirewall
+	for _, id := range *params.serviceParams.FirewallIDs {
+		firewalls = append(firewalls, &hcloud.ServerCreateFirewall{
+			Firewall: hcloud.Firewall{
+				ID: id,
+			},
+		})
 	}
 
-	if env == "dev" {
+	if params.env == "dev" {
 		ops.PublicNet.EnableIPv4 = true
 		ops.PublicNet.EnableIPv6 = true
-		ops.Firewalls = []*hcloud.ServerCreateFirewall{{Firewall: hcloud.Firewall{ID: *params.FirewallID}}}
+		firewalls = append(firewalls, &hcloud.ServerCreateFirewall{
+			Firewall: hcloud.Firewall{
+				ID: *params.allowAllFirewallID,
+			},
+		})
 	}
-	if params.NetworkID != nil {
+	ops.Firewalls = firewalls
+	if params.serviceParams.Network.PrivateNetwork {
 		ops.Networks = []*hcloud.Network{
 			{
-				ID: *params.NetworkID,
+
+				ID: params.networkID,
 			},
 		}
 	}
@@ -89,7 +114,7 @@ func deployDB(ctx context.Context, params data.CreateDBParams, imageID int64, DB
 	if err != nil {
 		return err
 	}
-	return model.SaveDB(ctx, *server.Server, params, DB_ID)
+	return params.serviceParams.SaveToDB(ctx, *server.Server)
 
 }
 

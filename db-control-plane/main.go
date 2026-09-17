@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/controller"
+	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/middlewares"
 	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/temporal"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/config"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
@@ -10,14 +11,14 @@ import (
 )
 
 func main() {
-	config.ValidateEnvVars([]string{"BUILD_TARGET", "ENV", "PACKER_TEMPLATES_PATH"})
+	config.ValidateEnvVars([]string{"BUILD_TARGET", "ENV", "PACKER_TEMPLATES_PATH", "networkID"})
 	temporal.SetupClient()
 	database.InitDB()
 	hetzner.SetupClient()
 	go temporal.StartWorker()
 
 	server := gin.Default()
-	server.POST("/services", controller.CreateService)
+	server.POST("/services", middlewares.ValidateParams(), controller.CreateService)
 	server.GET("/services", controller.ListMangedServices)
 	server.GET("/services/:kind", controller.GetMangedServiceCreateOps)
 

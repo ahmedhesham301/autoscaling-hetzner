@@ -16,14 +16,22 @@ import (
 )
 
 func CreateService(g *gin.Context) {
-	var params data.CreateDBParams
-	if err := g.ShouldBindJSON(&params); err != nil {
-		g.JSON(http.StatusBadRequest, err.Error())
-		slog.Error("Failed to bind body to createServiceParams struct ")
+	rawParams, exists := g.Get("params")
+	if !exists {
+		g.Status(http.StatusInternalServerError)
+		slog.Error("Required params missing from Gin context", "key", "params")
+		return
+	}
+	params, ok := rawParams.(data.CreateServiceParams)
+	if !ok {
+		g.Status(http.StatusInternalServerError)
+		slog.Error(
+			"Invalid params type in Gin context", "key", "params", "expected_type", "data.CreateServiceParams",
+		)
 		return
 	}
 
-	DB_ID, err := model.CreateDBRecord(g, params)
+	err := params.CreateRecord(context.Background())
 	if err != nil {
 		g.Status(http.StatusInternalServerError)
 		slog.Error("Failed to create database record", "error", err)
@@ -31,31 +39,30 @@ func CreateService(g *gin.Context) {
 	}
 
 	options := client.StartWorkflowOptions{
-		ID:        "create-database-workflow" + strconv.Itoa(DB_ID),
+		ID:        "create-database-workflow" + strconv.Itoa(*params.RecordID),
 		TaskQueue: "task-queue",
 	}
 
-	env := os.Getenv("ENV")
-	templatesPath := os.Getenv("PACKER_TEMPLATES_PATH")
-
-	var networkID *int64
-	networkvar, exists := os.LookupEnv("networkID")
-	if exists {
-		id, err := strconv.ParseInt(networkvar, 10, 64)
-		if err != nil {
-			g.Status(http.StatusInternalServerError)
-			slog.Error("Failed to Parse network id", "error", err)
-			return
-		}
-		networkID = &id
+	networkvar := os.Getenv("networkID")
+	networkID, err := strconv.ParseInt(networkvar, 10, 64)
+	if err != nil {
+		g.Status(http.StatusInternalServerError)
+		slog.Error("Failed to Parse network id", "error", err)
+		return
 	}
-	_, err = temporal.TemporalClient.ExecuteWorkflow(context.TODO(), options, temporal.CreateServiceWorkflow, params, DB_ID, env, templatesPath, networkID)
+	workflowParams := temporal.CreateServiceWorkflowParams{
+		ServiceParams: params,
+		Env:           os.Getenv("ENV"),
+		TemplatesPath: os.Getenv("PACKER_TEMPLATES_PATH"),
+		NetworkID:     networkID,
+	}
+	_, err = temporal.TemporalClient.ExecuteWorkflow(context.TODO(), options, temporal.CreateServiceWorkflow, workflowParams)
 	if err != nil {
 		g.Status(http.StatusInternalServerError)
 		slog.Error("Failed to Execute workflow", "error", err)
 		return
 	}
-	g.JSON(http.StatusAccepted, gin.H{"id": DB_ID})
+	g.JSON(http.StatusAccepted, params)
 }
 
 func ListMangedServices(g *gin.Context) {
