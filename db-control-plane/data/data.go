@@ -93,12 +93,13 @@ func (p *CreateServiceParams) SaveToDB(ctx context.Context, server hcloud.Server
 }
 
 func (p *CreateServiceParams) CreateRecord(ctx context.Context) error {
-	query := `INSERT INTO services (type)
-	VALUES ($1)
+	query := `INSERT INTO services (type, engine)
+	VALUES ($1, $2)
 	RETURNING id;`
 	row := database.Pool.QueryRow(
 		ctx, query,
 		p.ServiceType,
+		p.Engine,
 	)
 	err := row.Scan(&p.RecordID)
 	return err

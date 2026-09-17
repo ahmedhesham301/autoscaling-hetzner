@@ -61,6 +61,7 @@ CREATE TABLE services(
     server_name VARCHAR,
     server_id BIGINT,
     type VARCHAR NOT NULL,
+    engine VARCHAR NOT NULL,
     location VARCHAR,
     firewalls_ids BIGINT[],
     private_ip INET,
