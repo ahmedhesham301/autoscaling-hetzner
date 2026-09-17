@@ -6,7 +6,7 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o db-control-plane-bin ./db-control-plane
+RUN go build -o services-control-plane-bin ./services-control-plane
 
 FROM ubuntu:resolute
 
@@ -19,8 +19,8 @@ RUN packer plugins install github.com/hetznercloud/hcloud
 
 WORKDIR /app
 
-COPY --from=build /app/db-control-plane-bin .
+COPY --from=build /app/services-control-plane-bin .
 
 EXPOSE 8090
 
-CMD [ "./db-control-plane-bin" ]
+CMD [ "./services-control-plane-bin" ]

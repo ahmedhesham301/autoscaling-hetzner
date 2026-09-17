@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/model"
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/temporal"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/data"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/model"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/temporal"
 	"github.com/gin-gonic/gin"
 	"go.temporal.io/sdk/client"
 )

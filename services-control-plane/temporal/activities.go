@@ -6,8 +6,8 @@ import (
 	"net"
 	"os/exec"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/utils"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/data"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/utils"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/random"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"

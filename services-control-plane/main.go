@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/controller"
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/middlewares"
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/temporal"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/controller"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/middlewares"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/temporal"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/config"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"

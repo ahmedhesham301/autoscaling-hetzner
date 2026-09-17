@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "db-control-plane/**"
+      - "services-control-plane/**"
       - "modules/**"
 jobs:
   ci:
@@ -28,13 +28,13 @@ jobs:
         uses: docker/build-push-action@v7.3.0
         with:
           context: "."
-          file: "db-control-plane/Dockerfile"
+          file: "services-control-plane/Dockerfile"
           push: true
-          tags: ahmedhesham301/hetzner-db-control-plane:latest
+          tags: ahmedhesham301/hetzner-services-control-plane:latest
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: "ahmedhesham301/hetzner-db-control-plane:latest"
+          image-ref: "ahmedhesham301/hetzner-services-control-plane:latest"
           format: "template"
           template: "@/contrib/sarif.tpl"
           output: "trivy-results.sarif"

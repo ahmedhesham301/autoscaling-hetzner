@@ -37,11 +37,11 @@ services:
         condition: service_healthy
 
   db-control-plane:
-    image: ahmedhesham301/hetzner-db-control-plane:latest
+    image: ahmedhesham301/hetzner-services-control-plane:latest
     build:
       context: .
-      dockerfile: db-control-plane/Dockerfile
-    container_name: db-control-plane
+      dockerfile: services-control-plane/Dockerfile
+    container_name: services-control-plane
     restart: unless-stopped
     ports:
       - 8090:8090

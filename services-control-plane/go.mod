@@ -1,4 +1,4 @@
-module github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane
+module github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane
 
 go 1.27.1
 

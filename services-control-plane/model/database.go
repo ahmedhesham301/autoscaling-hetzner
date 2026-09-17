@@ -5,7 +5,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/db-control-plane/data"
+	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/data"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
 )
 
