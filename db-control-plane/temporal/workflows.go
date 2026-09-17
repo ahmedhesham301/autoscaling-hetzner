@@ -32,10 +32,10 @@ func CreateServiceWorkflow(ctx workflow.Context, params CreateServiceWorkflowPar
 	// If not build it
 	if imageID == nil {
 		imageParams := buildImageParams{
-			serviceParams: params.ServiceParams,
-			env:           params.Env,
-			templatesPath: params.TemplatesPath,
-			networkID:     params.NetworkID,
+			ServiceParams: params.ServiceParams,
+			Env:           params.Env,
+			TemplatesPath: params.TemplatesPath,
+			NetworkID:     params.NetworkID,
 		}
 		err := workflow.ExecuteActivity(ctx, buildImage, imageParams).Get(ctx, &imageID)
 		if err != nil {
@@ -55,11 +55,11 @@ func CreateServiceWorkflow(ctx workflow.Context, params CreateServiceWorkflowPar
 
 	// Deploy it
 	deployParams := deployServiceParams{
-		serviceParams:      params.ServiceParams,
-		imageID:            *imageID,
-		env:                params.Env,
-		allowAllFirewallID: allowAllFirewallID,
-		networkID:          params.NetworkID,
+		ServiceParams:      params.ServiceParams,
+		ImageID:            *imageID,
+		Env:                params.Env,
+		AllowAllFirewallID: allowAllFirewallID,
+		NetworkID:          params.NetworkID,
 	}
 	err = workflow.ExecuteActivity(ctx, deployService, deployParams).Get(ctx, nil)
 	if err != nil {

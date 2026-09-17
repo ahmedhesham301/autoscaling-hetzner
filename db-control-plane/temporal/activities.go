@@ -33,21 +33,21 @@ func checkImageExist(ctx context.Context, params data.CreateServiceParams) (*int
 }
 
 type buildImageParams struct {
-	serviceParams data.CreateServiceParams
-	env           string
-	templatesPath string
-	networkID     int64
+	ServiceParams data.CreateServiceParams
+	Env           string
+	TemplatesPath string
+	NetworkID     int64
 }
 
 func buildImage(ctx context.Context, params buildImageParams) (*int64, error) {
 	args := []string{
 		"build", "-machine-readable",
-		"-var", fmt.Sprintf("config=%v", utils.ConvertMapToJsonString(params.serviceParams.GetConfigMap())),
-		"-var", fmt.Sprintf("env=%v", params.env),
-		"-var", fmt.Sprintf("networkID=%v", params.networkID),
+		"-var", fmt.Sprintf("config=%v", utils.ConvertMapToJsonString(params.ServiceParams.GetConfigMap())),
+		"-var", fmt.Sprintf("env=%v", params.Env),
+		"-var", fmt.Sprintf("networkID=%v", params.NetworkID),
 	}
 
-	args = append(args, params.templatesPath+"/"+params.serviceParams.ServiceType+"/"+params.serviceParams.Engine+"/main.pkr.hcl")
+	args = append(args, params.TemplatesPath+"/"+params.ServiceParams.ServiceType+"/"+params.ServiceParams.Engine+"/main.pkr.hcl")
 
 	logger := activity.GetLogger(ctx)
 	cmd := exec.CommandContext(ctx, "packer", args...)
@@ -63,49 +63,51 @@ func buildImage(ctx context.Context, params buildImageParams) (*int64, error) {
 }
 
 type deployServiceParams struct {
-	serviceParams      data.CreateServiceParams
-	imageID            int64
-	env                string
-	allowAllFirewallID *int64
-	networkID          int64
+	ServiceParams      data.CreateServiceParams
+	ImageID            int64
+	Env                string
+	AllowAllFirewallID *int64
+	NetworkID          int64
 }
 
 func deployService(ctx context.Context, params deployServiceParams) error {
 	ops := hcloud.ServerCreateOpts{
-		Name:       random.AddRandomLetters(params.serviceParams.Engine + "-" + params.serviceParams.Version),
-		ServerType: &hcloud.ServerType{Name: params.serviceParams.ServerType},
-		Image:      &hcloud.Image{ID: params.imageID},
-		Location:   &hcloud.Location{Name: params.serviceParams.Location},
+		Name:       random.AddRandomLetters(params.ServiceParams.Engine + "-" + params.ServiceParams.Version),
+		ServerType: &hcloud.ServerType{Name: params.ServiceParams.ServerType},
+		Image:      &hcloud.Image{ID: params.ImageID},
+		Location:   &hcloud.Location{Name: params.ServiceParams.Location},
 		PublicNet: &hcloud.ServerCreatePublicNet{
-			EnableIPv4: params.serviceParams.Network.PublicIPv4,
-			EnableIPv6: params.serviceParams.Network.PublicIPv6,
+			EnableIPv4: params.ServiceParams.Network.PublicIPv4,
+			EnableIPv6: params.ServiceParams.Network.PublicIPv6,
 		},
-		Labels: services.AppendManagedLabel(params.serviceParams.GetConfigMapString()),
+		Labels: services.AppendManagedLabel(params.ServiceParams.GetConfigMapString()),
 	}
 	var firewalls []*hcloud.ServerCreateFirewall
-	for _, id := range *params.serviceParams.FirewallIDs {
-		firewalls = append(firewalls, &hcloud.ServerCreateFirewall{
-			Firewall: hcloud.Firewall{
-				ID: id,
-			},
-		})
+	if params.ServiceParams.FirewallIDs != nil {
+		for _, id := range *params.ServiceParams.FirewallIDs {
+			firewalls = append(firewalls, &hcloud.ServerCreateFirewall{
+				Firewall: hcloud.Firewall{
+					ID: id,
+				},
+			})
+		}
 	}
 
-	if params.env == "dev" {
+	if params.Env == "dev" {
 		ops.PublicNet.EnableIPv4 = true
 		ops.PublicNet.EnableIPv6 = true
 		firewalls = append(firewalls, &hcloud.ServerCreateFirewall{
 			Firewall: hcloud.Firewall{
-				ID: *params.allowAllFirewallID,
+				ID: *params.AllowAllFirewallID,
 			},
 		})
 	}
 	ops.Firewalls = firewalls
-	if params.serviceParams.Network.PrivateNetwork {
+	if params.ServiceParams.Network.PrivateNetwork {
 		ops.Networks = []*hcloud.Network{
 			{
 
-				ID: params.networkID,
+				ID: params.NetworkID,
 			},
 		}
 	}
@@ -114,7 +116,7 @@ func deployService(ctx context.Context, params deployServiceParams) error {
 	if err != nil {
 		return err
 	}
-	return params.serviceParams.SaveToDB(ctx, *server.Server)
+	return params.ServiceParams.SaveToDB(ctx, *server.Server)
 
 }
 
