@@ -1,4 +1,4 @@
-# Autoscaling Hetzner & Cloud Control Plane
+# Hetzner Control Plane
 
 An experimental, modular control plane for **Hetzner Cloud** that combines automated virtual machine autoscaling, cloud resource orchestration, and a **Database-as-a-Service (DBaaS)** provisioning pipeline.
 
