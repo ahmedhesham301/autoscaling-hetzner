@@ -10,6 +10,7 @@ An experimental, modular control plane for **Hetzner Cloud** that combines autom
 - [System Architecture](#system-architecture)
   - [Core Services](#core-services)
   - [Architecture Diagram](#architecture-diagram)
+- [Repository Layout & Data Model](#repository-layout--data-model)
 - [Key Workflows](#key-workflows)
   - [1. Autoscaling & Telemetry Feedback Loop](#1-autoscaling--telemetry-feedback-loop)
   - [2. Managed Database Provisioning Pipeline](#2-managed-database-provisioning-pipeline)
@@ -21,7 +22,8 @@ An experimental, modular control plane for **Hetzner Cloud** that combines autom
 - [REST API Reference](#rest-api-reference)
   - [API Server (Port 8080)](#api-server-port-8080)
   - [Control Plane (Port 8085)](#control-plane-port-8085)
-  - [Database Control Plane (Port 8090)](#database-control-plane-port-8090)
+  - [Services Control Plane (Port 8090)](#services-control-plane-port-8090)
+- [Packer Image Builds](#packer-image-builds)
 - [Autoscaling & Balancing Mechanics](#autoscaling--balancing-mechanics)
 - [Current Limitations](#current-limitations)
 - [Development Checks](#development-checks)
@@ -52,10 +54,11 @@ The system is decoupled into three primary microservices, a shared Go module lib
   - The autoscaling decision and actuation engine.
   - Exposes `/targets` for dynamic HTTP service discovery consumed by Grafana Alloy.
   - Receives Grafana Alerting webhooks at `/webhooks/grafana/alerts` and executes balanced scale-up or scale-down actions against Hetzner Cloud.
-- **`db-control-plane`** (Port `8090`):
+- **`services-control-plane`** (Port `8090`, Compose service key `db-control-plane`):
   - Database and managed service control plane.
   - Coordinates with a **Temporal** workflow engine to orchestrate image verification, automated Packer image baking (Hetzner snapshots), firewall configuration, and VM deployment.
   - Exposes `/services/monitoring/os/targets` for Alloy to scrape database node metrics.
+  - Currently accepts only service type `database` and engine `postgresql`. Template discovery has not yet been adapted to the nested template directories (see the API reference).
 - **`modules/`**:
   - Shared Go modules providing database connection pools (`database`), Hetzner Cloud client setup (`hetzner`), Grafana API provisioning (`grafana`), domain data models (`model`), and autoscaling algorithms (`services`).
 
@@ -70,7 +73,7 @@ flowchart TB
     subgraph CoreServices["Autoscaling Hetzner Control Plane"]
         APIServer["API Server\n:8080\n(Resources & Groups)"]
         ControlPlane["Control Plane\n:8085\n(Target Discovery & Autoscaler)"]
-        DBControlPlane["DB Control Plane\n:8090\n(DBaaS & Temporal Worker)"]
+        DBControlPlane["Services Control Plane\n:8090\n(DBaaS & Temporal Worker)"]
     end
 
     subgraph DataStore["Application State"]
@@ -127,6 +130,36 @@ flowchart TB
 
 ---
 
+## Repository Layout & Data Model
+
+```text
+api-server/                         Infrastructure REST API
+control-plane/                      Grafana webhooks and group target discovery
+services-control-plane/             Service API, validation, Temporal worker and activities
+modules/                            Shared cloud clients, models and scaling logic
+configs/schema.sql                  Application PostgreSQL schema
+configs/alloy/                      Discovery, scraping and Prometheus remote write
+configs/grafana/                    Prometheus datasource provisioning
+configs/temporal/                   Dynamic configuration (currently empty)
+packer-templates/database/postgresql/  Packer definition, installer and Patroni config
+packer-templates/common/            Shared image setup, cleanup and cloud-init files
+scripts/temporal/                   Temporal schema and namespace initialization
+.github/workflows/                  Container publishing and security scans
+docker-compose.yaml                 Local stack and service dependencies
+go.work                             Four-module Go workspace
+```
+
+The application database contains four tables:
+
+| Table | Stored state |
+| :---- | :----------- |
+| `templates` | Image, networks, SSH keys, firewalls, public IP flags and cloud-config for group VMs. |
+| `groups` | Template reference, locations, instance sizes and monitoring/scaling thresholds. |
+| `servers` | Hetzner IDs and metadata for group VMs, linked to `groups`. |
+| `services` | Service type and engine, followed by VM metadata and exporter flags after deployment. |
+
+The `private_ip` columns store public IPv4 addresses in development mode. Standalone servers created through `/servers` are not recorded in these tables. Temporal uses a separate PostgreSQL container with `temporal` and `temporal_visibility` databases.
+
 ## Key Workflows
 
 ### 1. Autoscaling & Telemetry Feedback Loop
@@ -176,16 +209,16 @@ Database provisioning runs through **Temporal Workflow** `CreateServiceWorkflow`
 sequenceDiagram
     autonumber
     participant Client as User / API Client
-    participant DBCP as DB Control Plane (:8090)
+    participant DBCP as Services Control Plane (:8090)
     participant Temporal as Temporal Workflow Engine
     participant Packer as Packer (Hetzner Builder)
     participant Hetzner as Hetzner Cloud API
     participant DB as PostgreSQL
 
-    Client->>DBCP: POST /services {app_name: "postgresql", app_version: "18", ...}
-    DBCP->>DB: Create initial database record (kind only)
+    Client->>DBCP: POST /services {type: "database", engine: "postgresql", version: "18", ...}
+    DBCP->>DB: Create services record (type and engine)
     DBCP->>Temporal: Execute CreateServiceWorkflow
-    DBCP-->>Client: 202 Accepted {id: <DB_ID>}
+    DBCP-->>Client: 202 Accepted (request fields and RecordID)
 
     Temporal->>Hetzner: Activity: Check if snapshot image exists for config
     alt Snapshot does not exist
@@ -201,7 +234,7 @@ sequenceDiagram
 
     Temporal->>Hetzner: Activity: Create server with snapshot image
     Hetzner-->>Temporal: Server creation response with IP and metadata
-    Temporal->>DB: Activity: Update database record with server details
+    Temporal->>DB: Update services record within deployment activity
 ```
 
 ---
@@ -212,7 +245,7 @@ sequenceDiagram
 | :--------------------- | :------------- | :-------- | :--------------------------------------------------- | :------------------------------------------ |
 | **`api-server`**       | `8080`         | `8080`    | Infrastructure & Autoscaling Group API               | `http://localhost:8080`                     |
 | **`control-plane`**    | `8085`         | `8085`    | Webhook receiver & Alloy target discovery            | `http://localhost:8085`                     |
-| **`db-control-plane`** | `8090`         | `8090`    | Managed DBaaS & Temporal Worker                      | `http://localhost:8090`                     |
+| **`db-control-plane`** | `8090`         | `8090`    | Services API & Temporal worker; container name `services-control-plane` | `http://localhost:8090`                     |
 | **`grafana`**          | `3000`         | `3000`    | Dashboards, alert rules & webhook triggers           | `admin` / `admin` (`http://localhost:3000`) |
 | **`prometheus`**       | `9090`         | `9090`    | Time-series metrics backend (`remote_write` enabled) | `http://localhost:9090`                     |
 | **`db`**               | `5432`         | `5432`    | Metadata PostgreSQL database                         | `postgres` / `1234`                         |
@@ -240,7 +273,7 @@ The system supports two execution environments configured via the `ENV` variable
 | **Network Requirements** | Alloy must have connectivity to the VMs' private network. | Alloy must be able to reach the VMs' public IPv4 addresses. |
 | **Template Public IPs** | Optional; instances can operate purely on private networks. | `publicIPv4` must be enabled. |
 | **Group Firewalls** | Uses template `firewalls`. | Uses template `firewalls`; no automatic firewall is added. |
-| **Database Firewalls** | Request `firewall_id` is currently ignored. | Creates/reuses `allow_all` for all IPv4 TCP traffic and forces public IPv4/IPv6 on. |
+| **Service Firewalls** | Applies request `firewalls_ids`. | Applies request firewalls and appends `allow_all` for all IPv4 TCP traffic; forces public IPv4/IPv6 on. |
 
 ### Configuration File (`.env.compose`)
 
@@ -253,12 +286,13 @@ HKEY=your_hetzner_api_token_here
 # Deployment mode: 'prod' or 'dev'
 ENV=dev
 
-# Optional private network for the temporary Packer build VM.
-# Omit this line unless using an existing network.
-# networkID=12345678
+# Required existing Hetzner network ID; replace this example value.
+networkID=12345678
 ```
 
-The `networkID` environment variable configures the Packer build VM. It does not attach deployed databases to that network: use `network_id` in the database request, or `networks` in a group template. In private-network mode, deployed VMs must have a private network and Alloy must be able to reach it. Only the exact value `ENV=dev` selects public-IP discovery.
+The services control plane requires `networkID` at startup and parses it as an integer for every provisioning request. Packer attaches its build VM to this network. A deployed service joins the same network when its request sets `network.private_network=true`; there is no per-request network ID. Group templates use their own `networks` array. Choose a network compatible with the Packer build location (`nbg1`) and deployed service location.
+
+Only the exact value `ENV=dev` selects public-IP discovery. Every other value selects the first private IP, so group templates must include a network and service requests must enable `network.private_network`. Alloy must be able to reach the selected addresses.
 
 Docker Compose supplies these service settings:
 
@@ -269,6 +303,8 @@ Docker Compose supplies these service settings:
 - `TEMPORAL_ADDRESS=temporal:7233`
 - `BUILD_TARGET=hetzner`
 - `PACKER_TEMPLATES_PATH=/packer-templates`
+
+`BUILD_TARGET` is checked by the services process and read by Packer; `hetzner` is the configured build path. The applications read process environment variables directly and do not load `.env` themselves. Compose explicitly loads `.env.compose` into the three Go services. `api-server/.env.example` is incomplete and does not replace the configuration above.
 
 ---
 
@@ -283,7 +319,7 @@ cd autoscaling-hetzner
 
 ### 2. Configure Environment
 
-Create `.env.compose` using the example above and replace the `HKEY` placeholder. There is currently no root `.env.compose.example` file.
+Create `.env.compose` using the example above and replace the `HKEY` and `networkID` placeholders. There is currently no root `.env.compose.example` file.
 
 The APIs have no authentication and Compose publishes ports on all host interfaces. Use an isolated development environment; restrict published ports before starting the stack. Database images also contain a shared password (see [Current Limitations](#current-limitations)).
 
@@ -292,8 +328,11 @@ Alloy currently uses `172.17.0.1` to reach the host. For communication within th
 ### 3. Launch All Services
 
 ```bash
+docker compose config --quiet
 docker compose up -d --build
 ```
+
+Compose commands use the service key `db-control-plane`, even though the source directory, container name and published image use `services-control-plane`. Docker builds use the repository root as their context so the Go workspace resolves the shared local module. Packer templates are mounted separately into the services container, read-only.
 
 ### 4. Automated Startup & Health Checks
 
@@ -305,7 +344,7 @@ When Docker Compose starts:
 4. Grafana loads the Prometheus datasource from `configs/grafana/datasource.yaml`. The API verifies database connectivity, reads the first Grafana datasource, initializes an alert folder, and registers the `server` webhook contact point if absent.
 5. Grafana Alloy polls `/targets` and `/services/monitoring/os/targets` and scrapes discovered node exporters every 30 seconds.
 
-Compose does not currently wait for Grafana readiness before starting the API, or namespace creation before starting the database worker. Check startup logs before submitting requests:
+Compose does not currently wait for Grafana readiness before starting the API, or namespace creation before starting the services worker. The services process initializes its Temporal client, database pool and Hetzner client before starting the worker. Check startup logs before submitting requests:
 
 ```bash
 docker compose ps -a
@@ -434,14 +473,14 @@ Base URL: `http://localhost:8085`
 
 ---
 
-### Database Control Plane (Port 8090)
+### Services Control Plane (Port 8090)
 
 Base URL: `http://localhost:8090`
 
 | Method | Endpoint                          | Description                                                                        |
 | :----- | :-------------------------------- | :--------------------------------------------------------------------------------- |
-| `GET`  | `/services`                       | List available database templates from `packer-templates` (e.g. `["postgresql"]`). |
-| `GET`  | `/services/:kind`                 | Get schema and configurable options for a service (e.g. `/services/postgresql`).   |
+| `GET`  | `/services`                       | Lists non-hidden entries immediately under `PACKER_TEMPLATES_PATH`; currently `["common", "database"]`. |
+| `GET`  | `/services/:kind`                 | Reads `<templates-path>/<kind>/info.json`; currently fails for PostgreSQL because its metadata is nested under `database/postgresql/`. |
 | `POST` | `/services`                       | Trigger a Temporal workflow to build and deploy a managed database.                |
 | `GET`  | `/services/monitoring/os/targets` | Scrape target endpoint for database OS metrics consumed by Alloy.                  |
 
@@ -449,25 +488,59 @@ Base URL: `http://localhost:8090`
 
 ```json
 {
-  "app_name": "postgresql",
-  "app_version": "18",
+  "type": "database",
+  "engine": "postgresql",
+  "version": "18",
   "location": "nbg1",
   "server_type": "cx23",
-  "public_ipv4": true,
-  "public_ipv6": true,
-  "node_exporter": true,
-  "service_exporter": false,
-  "network_id": 12633796
+  "firewalls_ids": [],
+  "network": {
+    "public_ipv4": true,
+    "public_ipv6": true,
+    "private_network": false
+  },
+  "monitoring": {
+    "node_exporter": true,
+    "service_exporter": false
+  }
 }
 ```
 
-A successful submission returns HTTP 202 with `{"id": <database-record-id>}`. Track execution in Temporal UI using workflow ID `create-database-workflow<ID>`. Acceptance does not mean the database is ready: the workflow stores VM metadata without checking PostgreSQL health. There is no service-instance listing, status, deletion, or credential-retrieval endpoint; `GET /services` lists templates only.
+A successful submission returns HTTP 202 with the bound request fields and a capitalized `RecordID` field (for example, `"RecordID": 1`). Omitted pointer fields such as `config` and `extra_labels` serialize as `null`. Track execution in Temporal UI using workflow ID `create-database-workflow1` for record 1. The worker uses task queue `task-queue`, and each activity has a 15-minute start-to-close timeout.
 
-- `network_id` attaches the deployed VM to an existing network. It is required for private-IP discovery outside `ENV=dev`; it can be omitted for public-IP development deployments.
-- `node_exporter` controls node exporter installation and OS target discovery.
-- `service_exporter` is used in image labels and stored in metadata, but no database exporter is installed or scraped.
-- `extra_labels` is accepted but unused.
-- `firewall_id` is accepted but ignored outside development mode; development mode replaces it with the `allow_all` firewall.
+Acceptance does not mean the database is ready: the workflow stores VM metadata without checking PostgreSQL health. There is no service-instance listing, status, deletion, or credential-retrieval endpoint. `GET /services` lists filesystem entries only; its discovery limitation does not prevent submitting the request above directly.
+
+- `type` and `engine`: Only `database` / `postgresql` pass validation.
+- `version`: Passed to the installer without version validation; use `18` because Patroni's binary path is fixed to that version.
+- `network`: Validation requires `public_ipv4` or `private_network` to be true, including in development mode. IPv6 alone does not pass validation. `private_network=true` attaches the VM to the environment's `networkID`.
+- `monitoring.node_exporter`: Controls node exporter installation and OS target discovery on port 9100. Discovery labels are `server_name`, `server_id`, `type` and `engine`.
+- `monitoring.service_exporter`: Used in image labels and stored in metadata, but no database exporter is installed or scraped.
+- `firewalls_ids`: Applies the supplied Hetzner firewall IDs. In development mode the workflow also attaches `allow_all`; this added firewall is not included in the stored request firewall list.
+- `config` and `extra_labels`: Accepted but currently unused for image building or server configuration.
+
+The old flat fields `app_name`, `app_version`, `network_id`, `node_exporter` and `firewall_id` are not the current creation contract. See [CreateServiceParams](services-control-plane/data/data.go) for the request structure. The existing `info.json` still uses the earlier `app_name` / `app_version` metadata format.
+
+---
+
+## Packer Image Builds
+
+The workflow searches Hetzner images using the labels `type`, `engine`, `version`, `node_exporter` and `service_exporter`, and reuses the first match. If there is no match, it runs `packer build -machine-readable` on `packer-templates/<type>/<engine>/main.pkr.hcl` and extracts the snapshot ID from Packer's artifact output. Changes to provisioning scripts or Patroni settings do not change these lookup labels, so a matching existing image can retain an older configuration.
+
+The PostgreSQL template builds from `debian-13` using a temporary `cx23` server in `nbg1`, independently of the requested deployed server type and location. Shared scripts upgrade packages, suppress service autostart during installation, optionally install node exporter, and clean cloud-init state, logs, package caches and SSH host keys before the snapshot is taken. The database installer installs PostgreSQL, Patroni and local etcd, drops the default PostgreSQL cluster, and enables Patroni and etcd for boot.
+
+The services container installs Packer and the Hetzner plugin. For a manual build from the repository root, export `HKEY` and use an existing network ID:
+
+```bash
+packer init packer-templates/database/postgresql/main.pkr.hcl
+packer build \
+  -var 'build_target=hetzner' \
+  -var 'env=dev' \
+  -var 'networkID=12345678' \
+  -var 'config={"type":"database","engine":"postgresql","version":"18","node_exporter":true,"service_exporter":false}' \
+  packer-templates/database/postgresql/main.pkr.hcl
+```
+
+This command creates a temporary cloud VM and a billable snapshot. The `env` Packer variable is passed through but currently does not change provisioning. A Vagrant source is also present in the HCL, but its required-plugin declaration is commented out and the services image installs only the Hetzner plugin; that alternate build path is incomplete.
 
 ---
 
@@ -508,20 +581,28 @@ Rules use a **3-minute pending period** (`For: 3m`) and a **3-minute repeat noti
 - **State and recovery:** Compose does not configure named data volumes for PostgreSQL, Temporal PostgreSQL, or Grafana. Configure persistent storage and backups before relying on their state across teardown/recreation. Cloud creation/deletion and metadata updates are not atomic, and there is no general reconciliation or rollback mechanism. Inspect Hetzner resources after failures to identify orphaned VMs and snapshots. Stopping Compose does not delete cloud resources.
 - **Scaling correctness:** Concurrent or repeated alerts can exceed capacity limits or leave incorrect counts. Missing webhook metric `B0` is interpreted as zero and can trigger scale-down. Private-IP selection assumes at least one private network; invalid configurations can panic after VM creation.
 - **Database capabilities:** The template deploys one PostgreSQL node with local etcd; multi-node HA, backups, credential generation, and database readiness checks are not implemented. Use version `18`: although template metadata lists other versions, Patroni’s binary directory is fixed to PostgreSQL 18.
-- **Startup:** The Temporal worker starts before its database and cloud clients are initialized. Namespace retries also contain a `MAX_ATTdMPTS` typo in `scripts/temporal/create-namespace.sh`, which aborts that retry path under `set -u`.
+- **Service API refactor:** Template discovery still assumes a flat directory layout. Provisioning requires a numeric `networkID` even for a deployment using only public networking; Packer always receives it. The schema now uses `services` with `type` and `engine`; existing installations need a manual schema migration because the initialization SQL only runs on a fresh data directory.
+- **Startup:** API startup depends on a reachable Grafana instance with at least one datasource, but Compose only gates it on PostgreSQL. The services worker is not gated on successful Temporal namespace initialization. A metadata record is inserted before network ID parsing and workflow submission, so submission failures can leave incomplete records.
 
 ---
 
 ## Development Checks
 
-The Go workspace includes `api-server`, `control-plane`, `db-control-plane`, and `modules`, and currently declares Go `1.27.1`. From the repository root:
+The Go workspace includes `api-server`, `control-plane`, `services-control-plane`, and `modules`, and all manifests currently declare Go `1.27.1`. From the repository root:
 
 ```bash
-go test ./api-server/... ./control-plane/... ./db-control-plane/... ./modules/...
-go vet ./api-server/... ./control-plane/... ./db-control-plane/... ./modules/...
+go test ./api-server/... ./control-plane/... ./services-control-plane/... ./modules/...
+go vet ./api-server/... ./control-plane/... ./services-control-plane/... ./modules/...
 docker compose config --quiet
-bash -n packer-templates/postgresql/install.sh packer-templates/postgresql/cleanup.sh
+for script in packer-templates/common/scripts/*.sh packer-templates/database/postgresql/install.sh; do
+  bash -n "$script" || exit 1
+done
 sh -n scripts/temporal/setup-postgres.sh scripts/temporal/create-namespace.sh
+packer validate -syntax-only packer-templates/database/postgresql/main.pkr.hcl
 ```
 
-Compose validation requires `.env.compose`. There are currently no Go test files, so `go test` checks package compilation but provides no behavioral coverage. These checks do not create cloud resources or prove that the full provisioning pipeline works. CI image workflows currently build and publish images and then scan them; they do not run a Go test suite.
+Compose validation requires `.env.compose`. There are currently no Go test files, so `go test` checks package compilation but provides no behavioral coverage. Packer syntax validation does not check plugin availability or prove that an image can be built. These checks do not create cloud resources or prove that the full provisioning pipeline works.
+
+To run a Go service locally, export its environment variables and use `go run ./api-server`, `go run ./control-plane` or `go run ./services-control-plane` from the repository root. For host processes, use `DATABASE_HOST=localhost`, `GRAFANA_HOST=localhost:3000`, `TEMPORAL_ADDRESS=localhost:7233` and an absolute `PACKER_TEMPLATES_PATH` pointing to this checkout. The services process also needs Packer and its Hetzner plugin on the host. Set `CONTROLLER_HOST` to an address reachable **from Grafana**, since it becomes the webhook URL. Stop the corresponding Compose service first if it is already using that host port.
+
+The three image workflows build and publish Docker Hub images on changes to their service directory or `modules/`, then upload Trivy scan results. They use `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. The Snyk workflow runs code analysis and dependency monitoring on main-branch pushes, pull requests, manual dispatch and its configured five-minute schedule, using `SNYK_TOKEN`. No workflow currently runs Go tests.
