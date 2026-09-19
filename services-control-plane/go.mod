@@ -3,7 +3,7 @@ module github.com/ahmedhesham301/hetzner-control-plane/services-control-plane
 go 1.27.1
 
 require (
-	github.com/ahmedhesham301/hetzner-control-plane/modules v0.0.0-20260910074206-cb19ab75fb44
+	github.com/ahmedhesham301/hetzner-control-plane/modules v0.0.0-20260919152541-0c018381fd79
 	github.com/gin-gonic/gin v1.12.0
 )
 

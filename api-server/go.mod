@@ -3,7 +3,7 @@ module api-server
 go 1.27.1
 
 require (
-	github.com/ahmedhesham301/hetzner-control-plane/modules v0.0.0-20260910074206-cb19ab75fb44
+	github.com/ahmedhesham301/hetzner-control-plane/modules v0.0.0-20260919152541-0c018381fd79
 	github.com/gin-gonic/gin v1.12.0
 	github.com/grafana/grafana-openapi-client-go v0.0.0-20251202103709-7ef691d4df1d
 	github.com/hetznercloud/hcloud-go/v2 v2.47.0
