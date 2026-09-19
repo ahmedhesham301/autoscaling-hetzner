@@ -3,7 +3,7 @@ package helper
 import (
 	"strconv"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/services"
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/hetznercloud/hcloud-go/v2/hcloud/schema"
 )

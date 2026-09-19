@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 	"context"
 	"net/http"
+
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/hetzner"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"

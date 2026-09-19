@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"

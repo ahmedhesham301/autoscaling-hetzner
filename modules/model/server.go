@@ -1,10 +1,11 @@
 package model
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
 	"context"
 	"net"
 	"time"
+
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/database"
 
 	"github.com/jackc/pgx/v5"
 )

@@ -5,7 +5,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/database"
 )
 
 var metricsPorts = map[string]int{

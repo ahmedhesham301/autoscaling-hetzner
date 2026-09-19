@@ -1,4 +1,4 @@
-module github.com/ahmedhesham301/autoscaling-hetzner/modules
+module github.com/ahmedhesham301/hetzner-control-plane/modules
 
 go 1.27.1
 

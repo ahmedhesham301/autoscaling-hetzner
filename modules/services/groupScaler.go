@@ -7,8 +7,8 @@ import (
 	"net"
 	"os"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/hetzner"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/model"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )

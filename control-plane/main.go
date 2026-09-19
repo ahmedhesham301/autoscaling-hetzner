@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/control-plane/controller"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
+	"github.com/ahmedhesham301/hetzner-control-plane/control-plane/controller"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/database"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/hetzner"
 
 	"github.com/gin-gonic/gin"
 )

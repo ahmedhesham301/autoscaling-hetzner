@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
 	"context"
+
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/database"
 )
 
 type Template struct {

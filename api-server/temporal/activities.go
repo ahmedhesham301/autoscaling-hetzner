@@ -9,9 +9,9 @@ import (
 	"api-server/data"
 	"api-server/utils"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/random"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/hetzner"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/random"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/services"
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"go.temporal.io/sdk/activity"
 )

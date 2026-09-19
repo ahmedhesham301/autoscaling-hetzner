@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/model"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/services"
 
 	"github.com/gin-gonic/gin"
 )

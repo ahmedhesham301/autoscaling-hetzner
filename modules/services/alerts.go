@@ -1,11 +1,12 @@
 package services
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/grafana"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/model"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag/conv"

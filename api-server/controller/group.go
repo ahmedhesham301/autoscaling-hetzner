@@ -1,15 +1,16 @@
 package controller
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/services"
 	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/grafana"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/hetzner"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/model"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/grafana/grafana-openapi-client-go/client/provisioning"

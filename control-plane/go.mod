@@ -1,9 +1,9 @@
-module github.com/ahmedhesham301/autoscaling-hetzner/control-plane
+module github.com/ahmedhesham301/hetzner-control-plane/control-plane
 
 go 1.27.1
 
 require (
-	github.com/ahmedhesham301/autoscaling-hetzner/modules v0.0.0-20260910074206-cb19ab75fb44
+	github.com/ahmedhesham301/hetzner-control-plane/modules v0.0.0-20260910074206-cb19ab75fb44
 	github.com/gin-gonic/gin v1.12.0
 )
 

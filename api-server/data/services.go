@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
+	"github.com/ahmedhesham301/hetzner-control-plane/modules/database"
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )
 
@@ -122,4 +122,3 @@ func (p *CreateServiceParams) GetConfigMapString() map[string]string {
 	}
 	return result
 }
-
