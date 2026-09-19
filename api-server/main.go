@@ -1,9 +1,9 @@
 package main
 
 import (
-	"api-server/controller"
-	"api-server/middlewares"
-	"api-server/temporal"
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/controller"
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/middlewares"
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/temporal"
 
 	"github.com/ahmedhesham301/hetzner-control-plane/modules/config"
 

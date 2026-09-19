@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"api-server/data"
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/data"
 
 	"github.com/gin-gonic/gin"
 )

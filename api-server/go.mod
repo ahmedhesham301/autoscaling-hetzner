@@ -1,4 +1,4 @@
-module api-server
+module github.com/ahmedhesham301/hetzner-control-plane/api-server
 
 go 1.27.1
 

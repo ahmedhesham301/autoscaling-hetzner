@@ -3,7 +3,7 @@ package temporal
 import (
 	"time"
 
-	"api-server/data"
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/data"
 
 	"go.temporal.io/sdk/workflow"
 )

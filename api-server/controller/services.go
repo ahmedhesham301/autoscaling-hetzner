@@ -1,14 +1,15 @@
 package controller
 
 import (
-	"api-server/data"
-	"api-server/temporal"
 	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/data"
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/temporal"
 
 	"github.com/gin-gonic/gin"
 	"go.temporal.io/sdk/client"

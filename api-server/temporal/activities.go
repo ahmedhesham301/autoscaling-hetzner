@@ -6,8 +6,8 @@ import (
 	"net"
 	"os/exec"
 
-	"api-server/data"
-	"api-server/utils"
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/data"
+	"github.com/ahmedhesham301/hetzner-control-plane/api-server/utils"
 
 	"github.com/ahmedhesham301/hetzner-control-plane/modules/hetzner"
 	"github.com/ahmedhesham301/hetzner-control-plane/modules/random"
