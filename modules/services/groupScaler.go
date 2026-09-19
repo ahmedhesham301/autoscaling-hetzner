@@ -1,13 +1,14 @@
 package services
 
 import (
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
-	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
 	"context"
 	"log/slog"
 	"math/rand/v2"
 	"net"
 	"os"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/hetzner"
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/model"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 )
@@ -131,7 +132,7 @@ func ScaleUp(ops ScaleOps, amount int, source string) error {
 	return nil
 }
 
-func ScaleOut(ops ScaleOps) error {
+func ScaleDown(ops ScaleOps) error {
 	var group model.Group
 	if ops.Group == nil {
 		err := group.GetById(ops.GroupId)

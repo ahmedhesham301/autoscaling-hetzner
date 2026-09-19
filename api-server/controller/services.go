@@ -38,7 +38,7 @@ func CreateService(g *gin.Context) {
 	}
 
 	options := client.StartWorkflowOptions{
-		ID:        "create-database-workflow" + strconv.Itoa(*params.RecordID),
+		ID:        "create-Service-workflow" + strconv.Itoa(*params.RecordID),
 		TaskQueue: "task-queue",
 	}
 

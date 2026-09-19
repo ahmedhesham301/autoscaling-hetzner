@@ -44,7 +44,7 @@ func ReceiveGrafanaWebhook(g *gin.Context) {
 
 			if group.ScalingAlgorithm == "simple" {
 				if alert.Values["B0"] <= float64(*group.ScaleDownThreshold) {
-					err = services.ScaleOut(services.ScaleOps{Group: &group})
+					err = services.ScaleDown(services.ScaleOps{Group: &group})
 					if err != nil {
 						slog.Error("Failed to scale out", "groupID", group.Id, "error", err)
 					}
