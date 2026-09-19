@@ -4,7 +4,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/data"
+	"api-server/data"
+
 	"github.com/gin-gonic/gin"
 )
 

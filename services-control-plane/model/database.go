@@ -5,7 +5,6 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/data"
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/database"
 )
 
@@ -16,8 +15,13 @@ var healthPaths = map[string]string{
 	"postgresql": ":8008/patroni",
 }
 
-func GetOSTargets(ctx context.Context) (*[]data.Target, error) {
-	targets := []data.Target{}
+type Target struct {
+	Targets []string          `json:"targets"`
+	Labels  map[string]string `json:"labels"`
+}
+
+func GetOSTargets(ctx context.Context) (*[]Target, error) {
+	targets := []Target{}
 
 	query := "SELECT private_ip, server_name, server_id, type, engine FROM services WHERE node_exporter=true;"
 	rows, err := database.Pool.Query(ctx, query)
@@ -33,7 +37,7 @@ func GetOSTargets(ctx context.Context) (*[]data.Target, error) {
 		if err := rows.Scan(&ip, &serverName, &serverID, &serviceType, &serviceEngine); err != nil {
 			return nil, err
 		}
-		targets = append(targets, data.Target{
+		targets = append(targets, Target{
 			Targets: []string{ip.String() + ":9100"},
 			Labels: map[string]string{
 				"server_name": serverName,

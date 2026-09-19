@@ -3,7 +3,8 @@ package temporal
 import (
 	"time"
 
-	"github.com/ahmedhesham301/autoscaling-hetzner/services-control-plane/data"
+	"api-server/data"
+
 	"go.temporal.io/sdk/workflow"
 )
 

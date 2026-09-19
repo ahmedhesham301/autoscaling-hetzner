@@ -2,6 +2,10 @@ package main
 
 import (
 	"api-server/controller"
+	"api-server/middlewares"
+	"api-server/temporal"
+
+	"github.com/ahmedhesham301/autoscaling-hetzner/modules/config"
 
 	"github.com/ahmedhesham301/autoscaling-hetzner/modules/grafana"
 
@@ -13,10 +17,13 @@ import (
 )
 
 func main() {
+	config.ValidateEnvVars([]string{"BUILD_TARGET", "ENV", "PACKER_TEMPLATES_PATH", "networkID"})
 
 	database.InitDB()
 	hetzner.SetupClient()
 	grafana.InitGrafana()
+	temporal.SetupClient()
+	go temporal.StartWorker()
 
 	server := gin.Default()
 
@@ -55,5 +62,9 @@ func main() {
 	server.GET("/images", controller.GetAllImages)
 	server.GET("/images/:id", controller.GetImageByID)
 	server.DELETE("/images/:id", controller.DeleteImage)
+
+	server.POST("/services", middlewares.ValidateParams(), controller.CreateService)
+	server.GET("/services", controller.ListMangedServices)
+	server.GET("/services/:kind", controller.GetMangedServiceCreateOps)
 	server.Run()
 }
