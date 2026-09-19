@@ -1,4 +1,4 @@
-name: db-control-plane ci
+name: services-control-plane ci
 
 on:
   workflow_dispatch:
